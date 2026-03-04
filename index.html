@@ -195,7 +195,40 @@ tr:hover td{background:#fafaf8}
 .pchip:hover{border-color:var(--muted2)}.pchip.fixed{background:var(--cream);cursor:default}
 .pchip .pcx{color:var(--muted2);cursor:pointer;font-size:14px;line-height:1;padding:0 1px}.pchip .pcx:hover{color:var(--red)}
 @media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}.nav{padding:0 10px}}
-@media(max-width:580px){.g2,.g3,.g4{grid-template-columns:1fr}.bal-bar{flex-direction:column}}
+@media(max-width:680px){
+  .nav{padding:0 8px;flex-wrap:wrap;height:auto;min-height:48px}
+  .nav-l{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;width:100%}
+  .nav-l::-webkit-scrollbar{display:none}
+  .nav-title{font-size:15px;padding:10px 10px 10px 0;margin-right:8px}
+  .tab{padding:11px 9px;font-size:9px}
+  .nav-r{gap:5px;padding:4px 0}
+  .mep-w{font-size:10px}.mep-w input{width:70px;font-size:11px}
+  .mep-st{display:none}
+  .btn{padding:5px 9px;font-size:9px}.btn-o{padding:4px 8px;font-size:9px}
+  .page{padding:14px 12px 60px}
+  .g2,.g3,.g4{grid-template-columns:1fr 1fr}
+  .card .cv{font-size:18px}
+  .card .cl{font-size:8px}
+  .sh h2{font-size:16px}
+  .ifl-inp{width:38px}
+  table{font-size:11px}
+  th,td{padding:6px 8px}
+  .tw .th{flex-wrap:wrap;gap:6px}
+  .iform{padding:10px 10px}
+  .ifg input,.ifg select{font-size:11px}
+  .mnav{gap:4px}
+  .mbtn{padding:5px 8px;font-size:9px}
+  .modal{padding:18px 14px 28px}
+  .mfr{grid-template-columns:1fr}
+  .cf-bars{height:100px}
+  .alert-vto .av-title{font-size:14px}
+  .gap-alert .ga-title{font-size:13px}
+  .gap-alert .ga-row{font-size:10px;flex-wrap:wrap}
+}
+@media(max-width:400px){
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .card .cv{font-size:16px}
+}
 @media print{.nav,.modal-bg,.toast{display:none!important}.page{display:block!important;padding:0}}
 </style>
 </head>
@@ -217,6 +250,8 @@ tr:hover td{background:#fafaf8}
     <span style="font-size:10px;color:var(--muted)">IPC%</span><input class="ifl-inp" type="number" id="inflacion" value="3.5" step="0.1" title="Inflación mensual estimada %" onchange="recalc()">
     <button class="btn-o" onclick="fetchMEP()" title="Actualizar MEP">↻</button>
     <button class="tab" onclick="showPage('precios',this)">Precios</button>
+    <button class="tab" onclick="showPage('deudas',this)">Deudas</button>
+    <button class="tab" onclick="showPage('reservas',this)">Reservas</button>
     <button class="btn" onclick="saveAll()">Guardar</button>
   </div>
 </nav>
@@ -520,6 +555,74 @@ tr:hover td{background:#fafaf8}
   </div>
 </div>
 
+<!-- DEUDAS -->
+<div class="page" id="page-deudas">
+  <div class="sec" style="margin-top:22px">
+    <div class="sh"><h2>Deudas a cobrar</h2><span class="tag tc">quién te debe</span><div class="sr"></div></div>
+    <div class="iform" style="flex-wrap:wrap">
+      <div class="ifg"><label>Persona</label>
+        <input type="text" id="d-persona" placeholder="nombre..." style="width:130px" list="d-persona-list">
+        <datalist id="d-persona-list"></datalist>
+      </div>
+      <div class="ifg"><label>Concepto</label><input type="text" id="d-concepto" placeholder="Tarjeta mayo, cena..." style="width:180px"></div>
+      <div class="ifg"><label>Monto (ARS)</label><input type="number" id="d-monto" placeholder="0" style="width:120px" min="0"></div>
+      <div class="ifg"><label>Fecha</label><input type="date" id="d-fecha" style="width:135px"></div>
+      <div class="ifg"><label>Vencimiento</label><input type="date" id="d-vto" style="width:135px"></div>
+      <button class="btn" onclick="addDeuda()" style="align-self:flex-end">+ Agregar</button>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="g g4" style="margin-bottom:14px">
+      <div class="card dk"><div class="cl">Total a cobrar</div><div class="cv" id="d-k-total">$0</div><div class="cs">pendiente</div></div>
+      <div class="card rl"><div class="cl">Vencidas</div><div class="cv" id="d-k-vencidas">0</div><div class="cs" id="d-k-venc-monto">—</div></div>
+      <div class="card al"><div class="cl">Próximas 7 días</div><div class="cv" id="d-k-prox">0</div><div class="cs">a cobrar pronto</div></div>
+      <div class="card gl"><div class="cl">Cobradas</div><div class="cv" id="d-k-cobradas">0</div><div class="cs">este historial</div></div>
+    </div>
+    <div class="tw">
+      <div class="th"><span>Deudas</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="d-filter" onchange="renderDeudas()" style="border:none;border-bottom:1px solid var(--muted2);background:transparent;font-family:'Geist Mono',monospace;font-size:10px;color:var(--ink);outline:none;cursor:pointer;padding:2px 0">
+            <option value="">Todas</option><option value="pendiente">Pendientes</option><option value="cobrada">Cobradas</option>
+          </select>
+        </div>
+      </div>
+      <table><thead><tr><th>Persona</th><th>Concepto</th><th>Fecha</th><th>Vencimiento</th><th class="r">Monto</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="d-tbody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- RESERVAS FUTURAS -->
+<div class="page" id="page-reservas">
+  <div class="sec" style="margin-top:22px">
+    <div class="sh"><h2>Reservas futuras</h2><span class="tag tf">cuánto necesitás reservar</span><div class="sr"></div></div>
+    <div class="note" style="margin-bottom:16px">Calculado automáticamente en base a tus gastos fijos, variables y tarjeta de cada mes. Te indica cuánto reservar hoy para cubrir cada mes.</div>
+    <div id="reservas-cards"></div>
+  </div>
+  <div class="sec">
+    <div class="sh"><h2>Mis reservas</h2><span class="tag ti">lo que ya reservaste</span><div class="sr"></div></div>
+    <div class="iform" style="flex-wrap:wrap">
+      <div class="ifg"><label>Mes objetivo</label>
+        <select id="res-mes" style="width:130px">
+          <option>Abr 2026</option><option>May 2026</option><option>Jun 2026</option>
+          <option>Jul 2026</option><option>Ago 2026</option><option>Sep 2026</option>
+        </select>
+      </div>
+      <div class="ifg"><label>Monto reservado (ARS)</label><input type="number" id="res-monto" placeholder="0" style="width:150px" min="0"></div>
+      <div class="ifg"><label>Instrumento / Donde</label><input type="text" id="res-inst" placeholder="Frasco Naranja, Plazo fijo..." style="width:180px"></div>
+      <div class="ifg"><label>Tasa mensual %</label><input type="number" id="res-tasa" placeholder="3.5" style="width:100px" step="0.1" min="0"></div>
+      <div class="ifg"><label>Fecha</label><input type="date" id="res-fecha" style="width:135px"></div>
+      <button class="btn" onclick="addReserva()" style="align-self:flex-end">+ Registrar</button>
+    </div>
+    <div class="tw" style="margin-top:10px">
+      <div class="th"><span>Reservas registradas</span><div class="ts" id="res-total-lbl">—</div></div>
+      <table><thead><tr><th>Mes</th><th>Instrumento</th><th>Tasa</th><th>Fecha</th><th class="r">Monto</th><th class="r">Con renta</th><th></th></tr></thead>
+      <tbody id="res-tbody"></tbody>
+      <tfoot><tr class="tf2"><td colspan="4"><strong>TOTAL RESERVADO</strong></td><td class="r" id="res-tot">—</td><td class="r" id="res-tot-r">—</td><td></td></tr></tfoot></table>
+    </div>
+  </div>
+</div>
+
 <!-- FRASCO MODAL -->
 <div class="modal-bg" id="fras-modal" style="display:none" onclick="if(event.target===this)closeFrascoModal()">
   <div class="modal">
@@ -585,6 +688,8 @@ let ST=JSON.parse(localStorage.getItem('fin_v4')||'null')||{
   ingresos:[{fecha:'2026-03-01',desc:'Facturación marzo',monto:400000,mes:'Mar 2026'}],
   personas:['Propio','Gilda','Pau','Mamá','Bruno'],
   precios:[],
+  deudas:[],
+  reservas:[],
   months:JSON.parse(JSON.stringify(MONTHS_DATA)),
 };
 // Patch months from seed if missing
@@ -1387,6 +1492,201 @@ function delPrecio(id){
   toast('Registro eliminado');
 }
 
+
+// ═══ DEUDAS ═══
+const TODAY_STR = new Date().toISOString().slice(0,10);
+
+function addDeuda(){
+  const persona = (document.getElementById('d-persona').value||'').trim();
+  const concepto = (document.getElementById('d-concepto').value||'').trim();
+  const monto = parseFloat(document.getElementById('d-monto').value)||0;
+  const fecha = document.getElementById('d-fecha').value || TODAY_STR;
+  const vto = document.getElementById('d-vto').value || '';
+  if(!persona){toast('Ingresá el nombre');return}
+  if(!monto){toast('Ingresá el monto');return}
+  if(!ST.deudas)ST.deudas=[];
+  ST.deudas.push({id:Date.now(),persona,concepto,monto,fecha,vto,estado:'pendiente'});
+  document.getElementById('d-persona').value='';
+  document.getElementById('d-concepto').value='';
+  document.getElementById('d-monto').value='';
+  document.getElementById('d-vto').value='';
+  renderDeudas();
+  toast('✓ Deuda registrada');
+}
+
+function renderDeudas(){
+  if(!ST.deudas)ST.deudas=[];
+  const filtro = document.getElementById('d-filter')?document.getElementById('d-filter').value:'';
+  let rows = ST.deudas.filter(d=>!filtro||d.estado===filtro);
+
+  // KPIs
+  const pend = ST.deudas.filter(d=>d.estado==='pendiente');
+  const totPend = pend.reduce((s,d)=>s+d.monto,0);
+  const cobradas = ST.deudas.filter(d=>d.estado==='cobrada').length;
+  const hoy = TODAY_STR;
+  const vencidas = pend.filter(d=>d.vto&&d.vto<hoy);
+  const prox7 = pend.filter(d=>{
+    if(!d.vto)return false;
+    const diff=(new Date(d.vto)-new Date(hoy))/(1000*60*60*24);
+    return diff>=0&&diff<=7;
+  });
+  document.getElementById('d-k-total').textContent=fmtD(totPend);
+  document.getElementById('d-k-vencidas').textContent=vencidas.length;
+  document.getElementById('d-k-venc-monto').textContent=vencidas.length?fmtD(vencidas.reduce((s,d)=>s+d.monto,0)):'sin vencidas';
+  document.getElementById('d-k-prox').textContent=prox7.length;
+  document.getElementById('d-k-cobradas').textContent=cobradas;
+
+  // Autocomplete personas
+  const names=[...new Set([...(ST.personas||[]),...ST.deudas.map(d=>d.persona)])];
+  document.getElementById('d-persona-list').innerHTML=names.map(n=>'<option value="'+n+'">').join('');
+
+  const tbody = document.getElementById('d-tbody');
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Sin deudas registradas</td></tr>';
+    return;
+  }
+  rows = rows.slice().sort((a,b)=>{
+    if(a.estado!==b.estado)return a.estado==='pendiente'?-1:1;
+    return (a.vto||'').localeCompare(b.vto||'');
+  });
+  tbody.innerHTML = rows.map(d=>{
+    const isVencida=d.vto&&d.vto<hoy&&d.estado==='pendiente';
+    const isProx=!isVencida&&d.vto&&(new Date(d.vto)-new Date(hoy))/(1000*60*60*24)<=7&&d.estado==='pendiente';
+    return `<tr>
+      <td><strong>${d.persona}</strong></td>
+      <td>${d.concepto||'—'}</td>
+      <td style="color:var(--muted);font-size:10px">${d.fecha}</td>
+      <td><span style="color:${isVencida?'var(--red)':isProx?'var(--gold)':'inherit'};font-size:10px">${d.vto||'—'}${isVencida?' ⚠':''}${isProx?' ↗':''}</span></td>
+      <td class="r"><strong>${fmtD(d.monto)}</strong></td>
+      <td><span class="bdg ${d.estado==='cobrada'?'bg':'br'}">${d.estado==='cobrada'?'✓ Cobrada':'Pendiente'}</span></td>
+      <td style="display:flex;gap:4px;align-items:center">
+        ${d.estado==='pendiente'?`<button class="delbtn" style="color:var(--green);font-size:10px;border:1px solid var(--green);padding:2px 7px;border-radius:3px" onclick="cobrarDeuda(${d.id})">✓</button>`:''}
+        <button class="delbtn" onclick="deleteDeuda(${d.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function cobrarDeuda(id){
+  const d=ST.deudas.find(x=>x.id===id);
+  if(!d)return;
+  d.estado='cobrada';
+  d.fechaCobro=TODAY_STR;
+  renderDeudas();
+  toast('✓ '+d.persona+' cobrado — '+fmtD(d.monto));
+}
+function deleteDeuda(id){
+  if(!confirm('¿Eliminar?'))return;
+  ST.deudas=ST.deudas.filter(x=>x.id!==id);
+  renderDeudas();
+  toast('Deuda eliminada');
+}
+
+// ═══ RESERVAS FUTURAS ═══
+function calcNecesidadMes(mes){
+  const totF=ST.fijos.reduce((s,f)=>s+f.monto,0);
+  const vs=ST.vars[mes]||[];
+  const totV=vs.reduce((s,v)=>s+(v.r||v.p),0);
+  const md=ST.months[mes]||{items:[]};
+  const totT=md.items.reduce((s,g)=>s+g.m,0);
+  return totF+totV+totT;
+}
+
+function renderReservasCards(){
+  const meses=['Mar 2026','Abr 2026','May 2026','Jun 2026','Jul 2026','Ago 2026','Sep 2026','Oct 2026'];
+  const hoyDate=new Date();
+  const mesActual=hoyDate.getMonth(); // 0-indexed
+  const futuros=meses.filter(m=>{
+    const mp={'Mar':2,'Abr':3,'May':4,'Jun':5,'Jul':6,'Ago':7,'Sep':8,'Oct':9}[m.split(' ')[0]];
+    return mp>mesActual;
+  });
+
+  if(!ST.reservas)ST.reservas=[];
+  const wrap=document.getElementById('reservas-cards');
+  if(!futuros.length){wrap.innerHTML='<div class="note">No hay meses futuros para proyectar</div>';return;}
+
+  wrap.innerHTML=futuros.map(mes=>{
+    const necesidad=calcNecesidadMes(mes);
+    const reservado=ST.reservas.filter(r=>r.mes===mes).reduce((s,r)=>s+r.monto,0);
+    const faltante=Math.max(0,necesidad-reservado);
+    const pct=necesidad>0?Math.min(100,Math.round(reservado/necesidad*100)):0;
+    const ok=pct>=100;
+    const warn=pct>=60&&pct<100;
+    const color=ok?'var(--green)':warn?'var(--gold)':'var(--red)';
+    return `<div class="card${ok?' gl':warn?' al':' rl'}" style="margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-family:'Instrument Serif',serif;font-size:17px;font-weight:400;margin-bottom:4px">${mes}</div>
+          <div style="font-size:11px;color:var(--muted)">Necesitás cubrir</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:24px;margin-top:2px">${fmtD(necesidad)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--muted)">Reservado</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:24px;color:${color};margin-top:2px">${fmtD(reservado)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${ok?'✓ Cubierto':'Faltante: '+fmtD(faltante)}</div>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div style="background:rgba(0,0,0,.06);border-radius:4px;height:6px;margin-top:12px;overflow:hidden">
+        <div style="background:${color};height:100%;width:${pct}%;border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
+        <span>${pct}% cubierto</span>
+        <span>Fijos: ${fmtD(ST.fijos.reduce((s,f)=>s+f.monto,0))} · Vars: ${fmtD((ST.vars[mes]||[]).reduce((s,v)=>s+(v.r||v.p),0))} · Tarjeta: ${fmtD((ST.months[mes]||{items:[]}).items.reduce((s,g)=>s+g.m,0))}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addReserva(){
+  const mes=document.getElementById('res-mes').value;
+  const monto=parseFloat(document.getElementById('res-monto').value)||0;
+  const inst=(document.getElementById('res-inst').value||'').trim();
+  const tasa=parseFloat(document.getElementById('res-tasa').value)||0;
+  const fecha=document.getElementById('res-fecha').value||TODAY_STR;
+  if(!monto){toast('Ingresá el monto');return}
+  if(!inst){toast('Ingresá el instrumento');return}
+  if(!ST.reservas)ST.reservas=[];
+  ST.reservas.push({id:Date.now(),mes,monto,inst,tasa,fecha});
+  document.getElementById('res-monto').value='';
+  document.getElementById('res-inst').value='';
+  document.getElementById('res-tasa').value='';
+  renderReservas();
+  renderReservasCards();
+  toast('✓ Reserva registrada');
+}
+
+function renderReservas(){
+  if(!ST.reservas)ST.reservas=[];
+  const tbody=document.getElementById('res-tbody');
+  const tot=ST.reservas.reduce((s,r)=>s+r.monto,0);
+  const totRenta=ST.reservas.reduce((s,r)=>s+r.monto*(1+(r.tasa||0)/100),0);
+  document.getElementById('res-tot').textContent=fmtD(tot);
+  document.getElementById('res-tot-r').textContent=fmtD(totRenta);
+  document.getElementById('res-total-lbl').textContent=ST.reservas.length+' registros · '+fmtD(tot)+' total';
+  if(!ST.reservas.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Sin reservas registradas</td></tr>';
+    return;
+  }
+  tbody.innerHTML=ST.reservas.slice().sort((a,b)=>a.mes.localeCompare(b.mes)).map(r=>{
+    const conRenta=r.monto*(1+(r.tasa||0)/100);
+    return `<tr>
+      <td><span class="bdg bb">${r.mes}</span></td>
+      <td>${r.inst}</td>
+      <td class="r">${r.tasa?r.tasa.toFixed(1)+'%':'—'}</td>
+      <td style="color:var(--muted);font-size:10px">${r.fecha}</td>
+      <td class="r"><strong>${fmtD(r.monto)}</strong></td>
+      <td class="r pos">${fmtD(Math.round(conRenta))}</td>
+      <td><button class="delbtn" onclick="deleteReserva(${r.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+function deleteReserva(id){
+  if(!confirm('¿Eliminar?'))return;
+  ST.reservas=ST.reservas.filter(r=>r.id!==id);
+  renderReservas();renderReservasCards();
+  toast('Reserva eliminada');
+}
+
 // ═══ NAV ═══
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1397,6 +1697,8 @@ function showPage(id,btn){
   if(id==='cuotas'){renderCuotasEvolution();renderCuotasDetail()}
   if(id==='precios'){renderPrecios();updatePreciosAutocomplete()}
   if(id==='egresos'){renderPersonasChips()}
+  if(id==='deudas'){renderDeudas()}
+  if(id==='reservas'){renderReservasCards();renderReservas()}
 }
 
 // ═══ SAVE ═══
@@ -1405,6 +1707,8 @@ function saveAll(){
   ST.cap={pp:parseFloat(document.getElementById('cap-pp').value)||0,uala:parseFloat(document.getElementById('cap-uala').value)||0,nx:parseFloat(document.getElementById('cap-nx').value)||0};
   if(!ST.personas)ST.personas=['Propio','Gilda','Pau','Mamá','Bruno'];
   if(!ST.precios)ST.precios=[];
+  if(!ST.deudas)ST.deudas=[];
+  if(!ST.reservas)ST.reservas=[];
   try{localStorage.setItem('fin_v4',JSON.stringify(ST))}catch(e){}
   toast('✓ Guardado');
 }
@@ -1418,6 +1722,9 @@ calcOpp(0); // MODULO: COSTO DE OPORTUNIDAD - inicializar
 renderPersonasChips();
 // Precios: set default date to today
 const phFecha=document.getElementById('ph-fecha');if(phFecha)phFecha.value=new Date().toISOString().slice(0,10);
+// Deudas + Reservas: set default dates
+const dFecha=document.getElementById('d-fecha');if(dFecha)dFecha.value=new Date().toISOString().slice(0,10);
+const resFecha=document.getElementById('res-fecha');if(resFecha)resFecha.value=new Date().toISOString().slice(0,10);
 </script>
 </body>
 </html>
