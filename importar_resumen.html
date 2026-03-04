@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Importar Resumen</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:rgba(255,255,255,.07);
+  --ink:#f0f0f5;--muted:#6b6b80;--gold:#f59e0b;--gold-d:rgba(245,158,11,.1);
+  --green:#22c55e;--green-d:rgba(34,197,94,.12);--red:#ef4444;--red-d:rgba(239,68,68,.12);
+  --accent:#a78bfa;--accent-d:rgba(167,139,250,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:'Geist Mono',monospace;min-height:100vh;padding:24px 16px 60px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 40% at 50% -5%,rgba(167,139,250,.07),transparent);z-index:0}
+.wrap{max-width:700px;margin:0 auto;position:relative;z-index:1}
+.header{margin-bottom:32px}
+.title{font-family:'Instrument Serif',serif;font-size:28px;font-weight:400;letter-spacing:-.5px;margin-bottom:4px}
+.title em{color:var(--gold);font-style:italic}
+.sub{font-size:11px;color:var(--muted);letter-spacing:1px}
+
+/* DROP ZONE */
+.drop{border:2px dashed rgba(167,139,250,.3);border-radius:16px;padding:40px 24px;
+  text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);margin-bottom:24px}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-d)}
+.drop-icon{font-size:40px;margin-bottom:12px}
+.drop-label{font-size:13px;color:var(--muted);margin-bottom:4px}
+.drop-hint{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+#file-input{display:none}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:13px;font-weight:700;letter-spacing:.5px}
+.bdg{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px}
+.bg{background:var(--green-d);color:var(--green)}
+.br{background:var(--red-d);color:var(--red)}
+.ba{background:var(--gold-d);color:var(--gold)}
+.bp{background:var(--accent-d);color:var(--accent)}
+
+/* MES SELECTOR */
+.mes-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.mes-row label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+.mes-row select{border:1.5px solid var(--border);background:var(--surface2);border-radius:8px;
+  font-family:'Geist Mono',monospace;font-size:12px;color:var(--ink);padding:6px 10px;outline:none;cursor:pointer}
+.mes-row select:focus{border-color:var(--gold)}
+
+/* ITEMS TABLE */
+.items-table{width:100%;border-collapse:collapse;font-size:11px}
+.items-table th{padding:6px 8px;text-align:left;color:var(--muted);font-size:9px;
+  letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.items-table th.r,.items-table td.r{text-align:right}
+.items-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+.items-table tr:last-child td{border-bottom:none}
+.items-table tr:hover td{background:rgba(255,255,255,.02)}
+.items-table input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.neg{color:var(--red)}
+.pos{color:var(--green)}
+
+/* SUMMARY BAR */
+.summary{background:var(--surface2);border-radius:10px;padding:12px 16px;
+  display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:14px;font-size:12px}
+.summary strong{color:var(--gold);font-size:16px}
+
+/* BUTTONS */
+.btn{background:var(--accent);color:white;border:none;border-radius:8px;padding:10px 22px;
+  font-family:'Geist Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.5px}
+.btn:hover{opacity:.85;transform:translateY(-1px)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn-o{background:transparent;color:var(--muted);border:1.5px solid var(--border);border-radius:8px;
+  padding:9px 18px;font-family:'Geist Mono',monospace;font-size:12px;cursor:pointer;transition:all .15s}
+.btn-o:hover{color:var(--ink);border-color:var(--muted)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn-sm{padding:5px 12px;font-size:10px;letter-spacing:.5px}
+
+/* PROGRESS */
+.progress{background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:16px}
+.progress-bar{background:var(--accent);height:100%;width:0;transition:width .3s;border-radius:4px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--surface);border:1px solid var(--border);color:var(--ink);
+  padding:10px 20px;border-radius:10px;font-size:12px;font-weight:700;
+  opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SECTION CHIP */
+.section-chip{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);padding:2px 6px;border:1px solid var(--border);border-radius:3px;margin-right:4px}
+
+/* LOG */
+.log{background:var(--surface2);border-radius:8px;padding:12px;font-size:10px;color:var(--muted);
+  max-height:120px;overflow-y:auto;line-height:1.7;margin-top:8px}
+.log .ok{color:var(--green)}.log .er{color:var(--red)}.log .inf{color:var(--accent)}
+
+@media(max-width:580px){
+  .title{font-size:22px}
+  .items-table td,.items-table th{padding:5px 6px;font-size:10px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="title">Importar <em>resumen</em></div>
+    <div class="sub">Banco Provincia · Banco Nación · Macro · BBVA</div>
+  </div>
+
+  <!-- DROP ZONE -->
+  <div class="drop" id="drop" onclick="document.getElementById('file-input').click()"
+    ondragover="event.preventDefault();this.classList.add('over')"
+    ondragleave="this.classList.remove('over')"
+    ondrop="handleDrop(event)">
+    <div class="drop-icon">📄</div>
+    <div class="drop-label">Arrastrá el PDF del resumen o hacé click para seleccionar</div>
+    <div class="drop-hint">Banco Provincia · Banco Nación · Macro · BBVA</div>
+  </div>
+  <input type="file" id="file-input" accept=".pdf" onchange="handleFile(this.files[0])">
+
+  <div class="progress"><div class="progress-bar" id="prog"></div></div>
+
+  <div id="results"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_FULL = {
+  'enero':'Ene','febrero':'Feb','marzo':'Mar','abril':'Abr','mayo':'May','junio':'Jun',
+  'julio':'Jul','agosto':'Ago','septiembre':'Sep','setiembre':'Sep','octubre':'Oct','noviembre':'Nov','diciembre':'Dic'
+};
+const MES_OPTIONS = ['Ene 2025','Feb 2025','Mar 2025','Abr 2025','May 2025','Jun 2025',
+  'Jul 2025','Ago 2025','Sep 2025','Oct 2025','Nov 2025','Dic 2025',
+  'Ene 2026','Feb 2026','Mar 2026','Abr 2026','May 2026','Jun 2026',
+  'Jul 2026','Ago 2026','Sep 2026','Oct 2026','Nov 2026','Dic 2026'];
+
+function toast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function setProgress(pct) {
+  document.getElementById('prog').style.width = pct + '%';
+}
+function log(el, msg, cls='') {
+  el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ═══ PDF TEXT EXTRACTION ═══
+async function extractText(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    // preserve layout with newlines between items
+    let lastY = null;
+    for (const item of content.items) {
+      if (lastY !== null && Math.abs(item.transform[5] - lastY) > 3) text += '\n';
+      text += item.str + ' ';
+      lastY = item.transform[5];
+    }
+    text += '\n--- PAGE BREAK ---\n';
+  }
+  return text;
+}
+
+// ═══ BANK DETECTION ═══
+function detectBank(text) {
+  if (/BBVA/i.test(text) || /Banco BBVA/i.test(text)) return 'BBVA';
+  if (/Banco\s+Macro/i.test(text) || /MACRO/i.test(text)) return 'Macro';
+  if (/Banco\s+Naci[oó]n/i.test(text) || /BNA/i.test(text) || /30-50001091/i.test(text)) return 'Nacion';
+  if (/Provincia/i.test(text) || /30-99924210/i.test(text) || /33-99924210/i.test(text)) return 'Provincia';
+  return 'Desconocido';
+}
+
+function detectCard(text) {
+  if (/MASTERCARD|Mastercard/i.test(text) && /VISA|Visa/i.test(text)) {
+    // disambiguate by position — whichever comes first
+    return text.indexOf('VISA') < text.indexOf('MASTERCARD') ? 'Visa' : 'Mastercard';
+  }
+  if (/MASTERCARD|Mastercard/i.test(text)) return 'Mastercard';
+  if (/VISA|Visa/i.test(text)) return 'Visa';
+  return '?';
+}
+
+// ═══ VTO → MES LABEL ═══
+function vtoToMesLabel(text) {
+  // patterns: "02-Mar-26", "04 mar. 26", "06-Mar-26", "04-Mar-26"
+  const patterns = [
+    /[Vv]encimiento\s+[Aa]ctual[:\s]+(\d{2})[- ]([A-Za-z]+)[- .]+(\d{2,4})/,
+    /VENCIMIENTO\s+ACTUAL[:\s]+(\d{2})[- ]([A-Za-z]+)[- .]+(\d{2,4})/,
+    /[Vv]encimiento[:\s]+(\d{2})\s+([a-z]+)\.\s+(\d{2,4})/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) {
+      const mesStr = m[2].toLowerCase().replace('.','');
+      const mesAbb = MESES_FULL[mesStr] || m[2].slice(0,3);
+      const yr = m[3].length === 2 ? '20' + m[3] : m[3];
+      return mesAbb + ' ' + yr;
+    }
+  }
+  return null;
+}
+
+// ═══ PARSERS ═══
+
+// Parse amount string → number
+function parseAmt(s) {
+  if (!s) return null;
+  s = s.replace(/\./g, '').replace(',', '.').replace(/[^\d.\-]/g,'').trim();
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+// Normalize date DD-Mon-YY or DD/MM/YY → YYYY-MM-DD
+function normDate(d) {
+  if (!d) return '';
+  // DD-Mon-YY
+  const m1 = d.match(/(\d{1,2})[-\/]([A-Za-z]+)[-\/](\d{2,4})/);
+  if (m1) {
+    const mes = MESES_FULL[m1[2].toLowerCase()] || m1[2];
+    const mi = MESES_ES.indexOf(mes);
+    const yr = m1[3].length === 2 ? '20' + m1[3] : m1[3];
+    return yr + '-' + String(mi + 1).padStart(2,'0') + '-' + m1[1].padStart(2,'0');
+  }
+  // DD/MM/YY or DD-MM-YY
+  const m2 = d.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})/);
+  if (m2) {
+    const yr = m2[3].length === 2 ? '20' + m2[3] : m2[3];
+    return yr + '-' + m2[2].padStart(2,'0') + '-' + m2[1].padStart(2,'0');
+  }
+  return d;
+}
+
+// ── PROVINCIA + NACION (same structure) ──
+function parseProvincia(text) {
+  const items = [];
+  const lines = text.split('\n');
+  let inDetail = false;
+  let section = '';
+
+  // date pattern: DD-Mon-YY or DD Mes DD
+  const dateRe = /^(\d{1,2}[-\/][A-Za-z]+[-\/]\d{2,4})/;
+  // amount at end: numbers with comma/dot
+  const amtRe = /(-?[\d\.]+,\d{2})\s*$/;
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i].trim();
+    if (/DETALLE DEL MES/i.test(l)) { inDetail = true; continue; }
+    if (!inDetail) continue;
+    if (/TOTAL TITULAR|TOTAL CONSUMOS|INFORMACION/i.test(l)) { inDetail = false; continue; }
+
+    // section headers
+    if (/COMPRAS DEL MES/i.test(l)) { section = 'COMPRA'; continue; }
+    if (/DÉBITOS AUTOMÁTICOS|DEBITOS AUTOMATICOS/i.test(l)) { section = 'DÉBITO'; continue; }
+    if (/CUOTAS DEL MES/i.test(l)) { section = 'CUOTA'; continue; }
+
+    const dateMatch = l.match(dateRe);
+    if (!dateMatch) continue;
+
+    const amtMatch = l.match(amtRe);
+    if (!amtMatch) continue;
+
+    const fecha = normDate(dateMatch[1]);
+    const monto = parseAmt(amtMatch[1]);
+    if (!monto || Math.abs(monto) < 1) continue;
+
+    // concept: everything between date and amount, strip NRO CUPÓN (5-6 digits)
+    let concepto = l.replace(dateMatch[0], '').replace(amtMatch[0], '')
+      .replace(/\b\d{5,6}\b/g, '').replace(/\s+/g, ' ').trim();
+
+    // extract cuota info: "14/30" or "C.10/12"
+    const cuotaMatch = concepto.match(/C?\.?(\d{1,2})\/(\d{1,2})/);
+    let cuota = '';
+    if (cuotaMatch) {
+      cuota = cuotaMatch[1] + '/' + cuotaMatch[2];
+      concepto = concepto.replace(cuotaMatch[0], '').replace(/\s+/g,' ').trim();
+    }
+
+    if (monto < 0) continue; // skip payments
+
+    items.push({ fecha, concepto, cuota, monto, seccion: section || 'COMPRA' });
+  }
+  return items;
+}
+
+// ── BBVA ──
+function parseBBVA(text) {
+  const items = [];
+  const lines = text.split('\n');
+  let inConsumes = false;
+
+  const dateRe = /^(\d{2}-[A-Za-z]{3}-\d{2})/;
+  const amtRe = /(-?[\d\.]+,\d{2})\s*(?:0,00)?\s*$/;
+
+  for (const l of lines) {
+    const lt = l.trim();
+    if (/Consumos\s+[A-Z]/i.test(lt)) { inConsumes = true; continue; }
+    if (/TOTAL CONSUMOS|Impuestos, cargos|Sus pagos/i.test(lt)) { inConsumes = false; continue; }
+    if (!inConsumes) continue;
+
+    const dateMatch = lt.match(dateRe);
+    if (!dateMatch) continue;
+    const amtMatch = lt.match(amtRe);
+    if (!amtMatch) continue;
+
+    const monto = parseAmt(amtMatch[1]);
+    if (!monto) continue;
+
+    let concepto = lt.replace(dateMatch[0], '').replace(amtMatch[0], '')
+      .replace(/\b\d{6}\b/g, '').replace(/\s+/g, ' ').trim();
+
+    // cuota
+    const cuotaMatch = concepto.match(/C\.(\d{1,2})\/(\d{1,2})/);
+    let cuota = '';
+    if (cuotaMatch) {
+      cuota = cuotaMatch[1] + '/' + cuotaMatch[2];
+      concepto = concepto.replace(cuotaMatch[0], '').trim();
+    }
+
+    if (monto < 0) continue; // skip bonifs/payments
+
+    items.push({ fecha: normDate(dateMatch[1]), concepto, cuota, monto, seccion: 'COMPRA' });
+  }
+  return items;
+}
+
+// ── MACRO ──
+function parseMacro(text) {
+  const items = [];
+  const lines = text.split('\n');
+  let inDetail = false;
+
+  // Macro date: "17 Febrero" or "19 Febrero"
+  const dateRe = /^(\d{1,2})\s+([A-Za-z]+)/;
+  const amtRe = /(-?[\d\.]+,\d{2})\s*(?:\*\s*0,00\s*\*)?\s*$/;
+
+  for (const l of lines) {
+    const lt = l.trim();
+    if (/SALDO ANTERIOR/i.test(lt)) { inDetail = true; continue; }
+    if (/IMPUESTO DE SELLOS|Plan V:|DEBITAREMOS/i.test(lt)) { inDetail = false; continue; }
+    if (!inDetail) continue;
+
+    const dateMatch = lt.match(dateRe);
+    if (!dateMatch) continue;
+
+    // Check month is valid
+    const mesLow = dateMatch[2].toLowerCase();
+    if (!MESES_FULL[mesLow]) continue;
+
+    const amtMatch = lt.match(amtRe);
+    if (!amtMatch) continue;
+
+    const monto = parseAmt(amtMatch[1]);
+    if (!monto || monto <= 0) continue;
+
+    // Build date — year from context (2026)
+    const mi = Object.keys(MESES_FULL).indexOf(mesLow);
+    const mesNum = Object.values(MESES_FULL)[mi];
+    const mesIdx = MESES_ES.indexOf(mesNum);
+    const fecha = '2026-' + String(mesIdx + 1).padStart(2,'0') + '-' + dateMatch[1].padStart(2,'0');
+
+    let concepto = lt.replace(dateMatch[0], '').replace(amtMatch[0], '')
+      .replace(/\b\d{5,9}\b/g, '').replace(/\*/g,'').replace(/\s+/g,' ').trim();
+
+    if (/SU PAGO|PAGO CAJERO/i.test(concepto)) continue;
+
+    // cuota
+    const cuotaMatch = concepto.match(/C?\.?(\d{1,2})\/(\d{1,2})/);
+    let cuota = '';
+    if (cuotaMatch) {
+      cuota = cuotaMatch[1] + '/' + cuotaMatch[2];
+      concepto = concepto.replace(cuotaMatch[0], '').trim();
+    }
+
+    items.push({ fecha, concepto, cuota, monto, seccion: 'COMPRA' });
+  }
+  return items;
+}
+
+// ═══ MAIN PARSE ═══
+function parseResumen(text) {
+  const bank = detectBank(text);
+  const card = detectCard(text);
+  const mesLabel = vtoToMesLabel(text);
+
+  let items = [];
+  if (bank === 'BBVA') items = parseBBVA(text);
+  else if (bank === 'Macro') items = parseMacro(text);
+  else items = parseProvincia(text); // Provincia + Nacion same format
+
+  return { bank, card, mesLabel, items };
+}
+
+// ═══ RENDER RESULTS ═══
+function renderResults(parsed, filename) {
+  const { bank, card, mesLabel, items } = parsed;
+  const container = document.getElementById('results');
+
+  const id = 'res_' + Date.now();
+  const total = items.reduce((s, i) => s + i.monto, 0);
+
+  const bankColors = { BBVA: '#009ed9', Macro: '#e31837', Nacion: '#003087', Provincia: '#0071c5', Desconocido: '#888' };
+  const bankColor = bankColors[bank] || '#888';
+
+  const optionsHtml = MES_OPTIONS.map(m =>
+    `<option value="${m}" ${m === mesLabel ? 'selected' : ''}>${m}</option>`
+  ).join('');
+
+  const rowsHtml = items.map((item, i) => {
+    const neg = item.monto < 0;
+    return `<tr>
+      <td><input type="checkbox" checked data-idx="${i}" class="chk-${id}"></td>
+      <td style="color:var(--muted);font-size:9px">${item.fecha}</td>
+      <td>
+        ${item.seccion !== 'COMPRA' ? `<span class="section-chip">${item.seccion}</span>` : ''}
+        <span>${item.concepto}</span>
+        ${item.cuota ? `<span style="font-size:9px;color:var(--accent);margin-left:4px">[${item.cuota}]</span>` : ''}
+      </td>
+      <td class="r ${neg ? 'neg' : ''}">${neg ? '−' : ''}$${Math.abs(item.monto).toLocaleString('es-AR', {minimumFractionDigits:2})}</td>
+    </tr>`;
+  }).join('');
+
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.id = id;
+  div.innerHTML = `
+    <div class="card-head">
+      <div class="card-title">
+        <span style="color:${bankColor}">${bank}</span> · ${card}
+        <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px">${filename}</span>
+      </div>
+      <span class="bdg bp">${items.length} ítems detectados</span>
+    </div>
+
+    <div class="mes-row">
+      <label>Cargar en mes:</label>
+      <select id="mes-${id}">${optionsHtml}</select>
+      <span style="font-size:10px;color:var(--muted)">← vencimiento detectado</span>
+    </div>
+
+    <div class="summary">
+      <div>Total consumos <strong>$${total.toLocaleString('es-AR',{minimumFractionDigits:2})}</strong></div>
+      <div style="font-size:10px;color:var(--muted)">Seleccioná los que querés importar</div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn-o btn-sm" onclick="toggleAll('${id}', true)">Todo</button>
+        <button class="btn-o btn-sm" onclick="toggleAll('${id}', false)">Ninguno</button>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="items-table">
+        <thead><tr>
+          <th style="width:28px"></th>
+          <th>Fecha</th>
+          <th>Concepto</th>
+          <th class="r">Monto</th>
+        </tr></thead>
+        <tbody id="tbody-${id}">${rowsHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="importarItems('${id}', ${JSON.stringify(items).replace(/"/g,'&quot;')}, '${bank}', '${card}')">
+        ↗ Importar seleccionados a Mis Finanzas
+      </button>
+    </div>
+    <div class="log" id="log-${id}" style="display:none"></div>
+  `;
+  container.appendChild(div);
+}
+
+function toggleAll(id, val) {
+  document.querySelectorAll(`.chk-${id}`).forEach(c => c.checked = val);
+}
+
+// ═══ IMPORT TO LOCALSTORAGE ═══
+function importarItems(id, items, bank, card) {
+  const mes = document.getElementById('mes-' + id).value;
+  const logEl = document.getElementById('log-' + id);
+  logEl.style.display = 'block';
+  logEl.innerHTML = '';
+
+  // get selected
+  const selected = [];
+  document.querySelectorAll(`.chk-${id}`).forEach((c, i) => {
+    if (c.checked) selected.push(items[parseInt(c.dataset.idx)]);
+  });
+
+  if (!selected.length) { toast('Seleccioná al menos un ítem'); return; }
+
+  // read ST
+  let ST;
+  try {
+    const raw = localStorage.getItem('fin_v4');
+    if (!raw) { toast('⚠ Abrí Mis Finanzas y presioná Guardar primero'); log(logEl, '✗ localStorage vacío — abrí la app y guardá primero', 'er'); return; }
+    ST = JSON.parse(raw);
+  } catch(e) { toast('Error leyendo datos'); return; }
+
+  if (!ST.months) ST.months = {};
+  if (!ST.months[mes]) ST.months[mes] = { items: [] };
+  if (!ST.months[mes].items) ST.months[mes].items = [];
+
+  const tarjeta = bank === 'BBVA' ? 'BBVA' : bank === 'Macro' ? 'Macro' :
+    bank === 'Provincia' ? 'Provincia ' + card :
+    bank === 'Nacion' ? 'Nación ' + card : card;
+
+  let added = 0;
+  selected.forEach(item => {
+    ST.months[mes].items.push({
+      c: item.concepto,
+      t: tarjeta,
+      q: item.cuota || '',
+      m: Math.abs(item.monto),
+      r: 'Propio',
+      n: item.fecha,
+    });
+    added++;
+    log(logEl, `✓ ${item.concepto} — $${Math.abs(item.monto).toLocaleString('es-AR')}`, 'ok');
+  });
+
+  localStorage.setItem('fin_v4', JSON.stringify(ST));
+  log(logEl, `\n✓ ${added} ítems cargados en ${mes} → ${tarjeta}`, 'inf');
+  toast(`✓ ${added} ítems importados a ${mes}`);
+}
+
+// ═══ FILE HANDLING ═══
+async function handleFile(file) {
+  if (!file || file.type !== 'application/pdf') { toast('Solo PDF'); return; }
+  setProgress(10);
+  try {
+    const text = await extractText(file);
+    setProgress(60);
+    const parsed = parseResumen(text);
+    setProgress(90);
+    if (!parsed.items.length) {
+      toast('No se encontraron ítems — formato no reconocido');
+      document.getElementById('results').innerHTML +=
+        `<div class="card"><div style="color:var(--red);font-size:12px">
+          ⚠ No se detectaron ítems en <strong>${file.name}</strong> (banco: ${parsed.bank})<br>
+          <span style="color:var(--muted);font-size:10px">Revisá que sea un resumen de tarjeta de crédito</span>
+        </div></div>`;
+    } else {
+      renderResults(parsed, file.name);
+      toast(`✓ ${parsed.bank} ${parsed.card} — ${parsed.items.length} ítems`);
+    }
+    setProgress(100);
+    setTimeout(() => setProgress(0), 800);
+  } catch(e) {
+    toast('Error procesando PDF: ' + e.message);
+    setProgress(0);
+    console.error(e);
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop').classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+</script>
+</body>
+</html>
