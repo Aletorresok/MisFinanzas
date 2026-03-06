@@ -723,21 +723,22 @@ const FRASCOS_SEED=[
   {capital:32000,renta:1276.49,vto:"16/3/26",mes:"Mar",mn:3},
   {capital:200000,renta:9172.60,vto:"30/3/26",mes:"Mar",mn:3},
   {capital:10000,renta:466.03,vto:"1/4/26",mes:"Abr",mn:4},
-  {capital:88660,renta:493.10,vto:"6/4/26",mes:"Abr",mn:4},
-  {capital:22133,renta:123.10,vto:"6/4/26",mes:"Abr",mn:4},
-  {capital:90000,renta:1287.12,vto:"6/4/26",mes:"Abr",mn:4},
-  {capital:61266,renta:876.19,vto:"6/4/26",mes:"Abr",mn:4},
-  {capital:27076,renta:387.22,vto:"6/4/26",mes:"Abr",mn:4},
-  {capital:88660,renta:510.10,vto:"4/5/26",mes:"May",mn:5},
-  {capital:22133,renta:127.34,vto:"4/5/26",mes:"May",mn:5},
-  {capital:90000,renta:1331.51,vto:"4/5/26",mes:"May",mn:5},
-  {capital:52805,renta:781.22,vto:"4/5/26",mes:"May",mn:5},
-  {capital:20018,renta:296.16,vto:"4/5/26",mes:"May",mn:5},
-  {capital:88660,renta:527.10,vto:"1/6/26",mes:"Jun",mn:6},
-  {capital:22133,renta:131.59,vto:"1/6/26",mes:"Jun",mn:6},
-  {capital:90000,renta:1375.89,vto:"4/6/26",mes:"Jun",mn:6},
-  {capital:52805,renta:807.27,vto:"4/6/26",mes:"Jun",mn:6},
-  {capital:20018,renta:306.03,vto:"4/6/26",mes:"Jun",mn:6},
+  {capital:200000,renta:13500.00,vto:"6/4/26",mes:"Abr",mn:4},
+  {capital:88660,renta:2970.11,vto:"6/4/26",mes:"Abr",mn:4},
+  {capital:22133,renta:741.46,vto:"6/4/26",mes:"Abr",mn:4},
+  {capital:90000,renta:3825.00,vto:"6/4/26",mes:"Abr",mn:4},
+  {capital:61266,renta:2603.80,vto:"6/4/26",mes:"Abr",mn:4},
+  {capital:27076,renta:1150.73,vto:"6/4/26",mes:"Abr",mn:4},
+  {capital:88660,renta:5133.41,vto:"4/5/26",mes:"May",mn:5},
+  {capital:22133,renta:1281.50,vto:"4/5/26",mes:"May",mn:5},
+  {capital:90000,renta:6066.00,vto:"4/5/26",mes:"May",mn:5},
+  {capital:52805,renta:3559.06,vto:"4/5/26",mes:"May",mn:5},
+  {capital:20018,renta:1349.21,vto:"4/5/26",mes:"May",mn:5},
+  {capital:88660,renta:7429.71,vto:"1/6/26",mes:"Jun",mn:6},
+  {capital:22133,renta:1854.75,vto:"1/6/26",mes:"Jun",mn:6},
+  {capital:90000,renta:8676.00,vto:"4/6/26",mes:"Jun",mn:6},
+  {capital:52805,renta:5090.40,vto:"4/6/26",mes:"Jun",mn:6},
+  {capital:20018,renta:1929.74,vto:"4/6/26",mes:"Jun",mn:6},
 ];
 
 const FIJOS_SEED=[{nombre:"Alquiler",monto:208692},{nombre:"Expensas",monto:30000},{nombre:"Internet",monto:15000},{nombre:"Teléfono",monto:9000},{nombre:"Agua",monto:27000}];
@@ -759,6 +760,26 @@ let ST=JSON.parse(localStorage.getItem('fin_v4')||'null')||{
 };
 // Patch months from seed if missing
 Object.keys(MONTHS_DATA).forEach(m=>{if(!ST.months[m])ST.months[m]=JSON.parse(JSON.stringify(MONTHS_DATA[m]))});
+
+// ═══ PATCH FRASCOS DESDE SEED ═══
+// Sincroniza rentas: si un frasco del seed (identificado por capital+vto) existe en ST,
+// actualiza su renta. Si no existe, lo agrega. Así cada deploy actualiza los datos.
+(function patchFrascos(){
+  FRASCOS_SEED.forEach(seed=>{
+    const idx=ST.frascos.findIndex(f=>f.capital===seed.capital&&f.vto===seed.vto);
+    if(idx>=0){
+      // actualizar renta si cambió
+      ST.frascos[idx].renta=seed.renta;
+      ST.frascos[idx].mes=seed.mes;
+      ST.frascos[idx].mn=seed.mn;
+    } else {
+      // frasco nuevo en el seed que no estaba guardado → agregar
+      ST.frascos.push({...seed});
+    }
+  });
+  // guardar inmediatamente para que el localStorage quede actualizado
+  localStorage.setItem('fin_v4',JSON.stringify(ST));
+})();
 
 // Auto-detect current month
 const _MONTH_NAMES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -862,7 +883,10 @@ function saveFrasco(){
   const pp=vto.split('-');
   const vtoStr=`${parseInt(pp[2])}/${parseInt(pp[1])}/${pp[0].slice(2)}`;
   const mn={'Mar':3,'Abr':4,'May':5,'Jun':6,'Jul':7,'Ago':8}[mes]||4;
-  ST.frascos.push({capital:cap,renta:ren,vto:vtoStr,mes,mn});
+  // Si este frasco coincide con el seed, usar la renta del seed (ignorar la ingresada)
+  const seedMatch=FRASCOS_SEED.find(s=>s.capital===cap&&s.vto===vtoStr);
+  const rentaFinal=seedMatch?seedMatch.renta:ren;
+  ST.frascos.push({capital:cap,renta:rentaFinal,vto:vtoStr,mes,mn});
   ST.frascos.sort((a,b)=>a.mn-b.mn);
   closeFrascoModal();renderFrascos();renderCashFlow();recalc();renderAlertVto();
   toast('✓ Frasco agregado');autosave();
