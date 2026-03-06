@@ -268,6 +268,10 @@ tr:hover td{background:#fafaf8}
     <div class="g g4">
       <div class="card dk"><div class="cl">Patrimonio total (ARS)</div><div class="cv" id="k-tot-ars">—</div><div class="cs" id="k-tot-usd">—</div></div>
       <div class="card dk"><div class="cl">Capital líquido</div><div class="cv" id="k-liq">—</div><div class="cs">PP + Uala + NX</div></div>
+      <div class="card al"><div class="cl">Frascos activos</div><div class="cv" id="k-fras-tot">—</div><div class="cs" id="k-fras-prox">—</div></div>
+      <div class="card bl"><div class="cl">Terceros a cobrar</div><div class="cv pos" id="k-terc-tot">—</div><div class="cs" id="k-terc-det">tarjeta mes actual</div></div>
+    </div>
+    <div class="g g2" style="margin-top:9px">
       <div class="card gl"><div class="cl">Ingresos mes</div><div class="cv pos" id="k-ing">—</div><div class="cs" id="k-ing-s">—</div></div>
       <div class="card rl"><div class="cl">Egresos mes</div><div class="cv neg" id="k-eg">—</div><div class="cs">fijos + vars + tarjeta</div></div>
     </div>
@@ -756,8 +760,20 @@ let ST=JSON.parse(localStorage.getItem('fin_v4')||'null')||{
 // Patch months from seed if missing
 Object.keys(MONTHS_DATA).forEach(m=>{if(!ST.months[m])ST.months[m]=JSON.parse(JSON.stringify(MONTHS_DATA[m]))});
 
-let activeTarMes='Mar 2026',activeVarMes='Mar 2026',activeCqMes='Mar 2026';
-const TODAY=new Date(2026,2,3); // March 3 2026
+// Auto-detect current month
+const _MONTH_NAMES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const _now=new Date();
+const _currentMonthKey=_MONTH_NAMES[_now.getMonth()]+' '+_now.getFullYear();
+function _nearestAvailableMonth(preferred){
+  if(ST.months&&ST.months[preferred])return preferred;
+  // fallback to most recent past month in data
+  const keys=Object.keys(ST.months||{});
+  return keys[keys.length-1]||preferred;
+}
+let activeTarMes=_nearestAvailableMonth(_currentMonthKey);
+let activeVarMes=_currentMonthKey;
+let activeCqMes=_nearestAvailableMonth(_currentMonthKey);
+const TODAY=new Date();
 
 // ═══ HELPERS ═══
 function fmt(n,p='$'){if(n===null||n===undefined)return'—';const a=Math.abs(n);const s=p+Math.round(a).toLocaleString('es-AR');return n<0?'−'+s:s}
@@ -849,9 +865,9 @@ function saveFrasco(){
   ST.frascos.push({capital:cap,renta:ren,vto:vtoStr,mes,mn});
   ST.frascos.sort((a,b)=>a.mn-b.mn);
   closeFrascoModal();renderFrascos();renderCashFlow();recalc();renderAlertVto();
-  toast('✓ Frasco agregado');
+  toast('✓ Frasco agregado');autosave();
 }
-function delFrasco(i){if(!confirm('¿Eliminar?'))return;ST.frascos.splice(i,1);renderFrascos();renderCashFlow();recalc();renderAlertVto()}
+function delFrasco(i){if(!confirm('¿Eliminar?'))return;ST.frascos.splice(i,1);renderFrascos();renderCashFlow();recalc();renderAlertVto();autosave()}
 
 // ═══ MONTH NAVS ═══
 function renderMonthNavs(){
@@ -962,7 +978,7 @@ function addIncome(){
   if(!monto){toast('Ingresá un monto');return}
   ST.ingresos.push({fecha,desc:desc||'Factura',monto,mes});
   document.getElementById('inc-desc').value='';document.getElementById('inc-monto').value='';
-  renderIngresos();recalc();toast('✓ Factura agregada');
+  renderIngresos();recalc();toast('✓ Factura agregada');autosave();
 }
 
 // ═══ REMINDER ═══
@@ -1330,6 +1346,28 @@ function recalc(){
   // MODULO: OPTIMIZACION DE LIQUIDEZ
   renderGapAlert();
   renderIngresos();
+  // Cards Resumen: Frascos y Terceros a cobrar
+  const kFrasTot=document.getElementById('k-fras-tot');
+  const kFrasProx=document.getElementById('k-fras-prox');
+  if(kFrasTot){kFrasTot.textContent=fmtD(frasTot);}
+  if(kFrasProx){
+    const proxFrasco=ST.frascos.filter(f=>frascoVtoDays(f.vto)>=0).sort((a,b)=>frascoVtoDays(a.vto)-frascoVtoDays(b.vto))[0];
+    kFrasProx.textContent=proxFrasco?`próx. vence ${proxFrasco.vto} (${frascoVtoDays(proxFrasco.vto)}d)`:`${ST.frascos.length} frascos`;
+  }
+  const mdTerc=ST.months[activeTarMes]||{items:[]};
+  const tercTotal=mdTerc.items.filter(g=>g.r&&g.r!=='Propio').reduce((s,g)=>s+g.m,0);
+  const kTercTot=document.getElementById('k-terc-tot');
+  const kTercDet=document.getElementById('k-terc-det');
+  if(kTercTot){kTercTot.textContent=tercTotal>0?fmt(tercTotal):'$0';}
+  if(kTercDet){
+    if(tercTotal>0){
+      const desglose=mdTerc.items.reduce((acc,g)=>{if(g.r&&g.r!=='Propio')acc[g.r]=(acc[g.r]||0)+g.m;return acc},{});
+      kTercDet.textContent=Object.entries(desglose).map(([k,v])=>`${k} ${fmt(v)}`).join(' · ');
+    } else {
+      kTercDet.textContent='sin terceros este mes';
+    }
+  }
+  autosave();
 }
 
 // ═══ PERSONAS ═══
@@ -1375,9 +1413,7 @@ setTimeout(()=>{
   const planBtn = document.querySelector('#page-planificacion .mvtab');
   if(planBtn) showPlanTab('reservas', planBtn);
 },50);
-  toast('✓ '+name+' agregado');
-}
-function delPersona(i){
+  toast('✓ '+name+' agregado');autosave();(i){
   const name=ST.personas[i];
   if(name==='Propio'){toast('No se puede eliminar Propio');return}
   if(!confirm('Eliminar "'+name+'"? Los gastos asignados quedan como Propio.')){return}
@@ -1596,7 +1632,7 @@ function addDeuda(){
   document.getElementById('d-monto').value='';
   document.getElementById('d-vto').value='';
   renderDeudas();
-  toast('✓ Deuda registrada');
+  toast('✓ Deuda registrada');autosave();
 }
 
 function renderDeudas(){
@@ -1737,7 +1773,7 @@ function addReserva(){
   document.getElementById('res-tasa').value='';
   renderReservas();
   renderReservasCards();
-  toast('✓ Reserva registrada');
+  toast('✓ Reserva registrada');autosave();
 }
 
 function renderReservas(){
@@ -1876,7 +1912,21 @@ function delPersonaConfig(i) {
   toast(name + ' eliminado');
 }
 
-// ═══ SAVE ═══
+// ═══ AUTOSAVE (debounce 2s) ═══
+let _autosaveTimer=null;
+function autosave(){
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer=setTimeout(()=>{
+    ST.mep=mep();
+    ST.cap={pp:parseFloat(document.getElementById('cap-pp').value)||0,uala:parseFloat(document.getElementById('cap-uala').value)||0,nx:parseFloat(document.getElementById('cap-nx').value)||0};
+    if(!ST.personas)ST.personas=['Propio','Gilda','Pau','Mamá','Bruno'];
+    if(!ST.precios)ST.precios=[];
+    if(!ST.deudas)ST.deudas=[];
+    if(!ST.reservas)ST.reservas=[];
+    try{localStorage.setItem('fin_v4',JSON.stringify(ST));document.getElementById('mep-st').textContent='guardado ✓';setTimeout(()=>{if(document.getElementById('mep-st').textContent==='guardado ✓')document.getElementById('mep-st').textContent=''},2000);}catch(e){}
+  },2000);
+}
+
 function saveAll(){
   ST.mep=mep();
   ST.cap={pp:parseFloat(document.getElementById('cap-pp').value)||0,uala:parseFloat(document.getElementById('cap-uala').value)||0,nx:parseFloat(document.getElementById('cap-nx').value)||0};
