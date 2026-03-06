@@ -1406,14 +1406,10 @@ function addPersona(){
   ST.personas.push(name);
   inp.value='';
   renderPersonasChips();
-// v8: init movimientos default tab
-setTimeout(()=>{
-  const movBtn = document.querySelector('#page-movimientos .mvtab');
-  if(movBtn) showMovTab('egresos', movBtn);
-  const planBtn = document.querySelector('#page-planificacion .mvtab');
-  if(planBtn) showPlanTab('reservas', planBtn);
-},50);
-  toast('✓ '+name+' agregado');autosave();(i){
+  toast('✓ '+name+' agregado');
+  autosave();
+}
+function delPersona(i){
   const name=ST.personas[i];
   if(name==='Propio'){toast('No se puede eliminar Propio');return}
   if(!confirm('Eliminar "'+name+'"? Los gastos asignados quedan como Propio.')){return}
