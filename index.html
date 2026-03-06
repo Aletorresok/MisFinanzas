@@ -1745,9 +1745,24 @@ function renderReservasCards(){
   const wrap=document.getElementById('reservas-cards');
   if(!futuros.length){wrap.innerHTML='<div class="note">No hay meses futuros para proyectar</div>';return;}
 
+  // Mapeo mes label → mn número
+  const MES_MN={'Mar':3,'Abr':4,'May':5,'Jun':6,'Jul':7,'Ago':8,'Sep':9,'Oct':10};
+
   wrap.innerHTML=futuros.map(mes=>{
     const necesidad=calcNecesidadMes(mes);
-    const reservado=ST.reservas.filter(r=>r.mes===mes).reduce((s,r)=>s+r.monto,0);
+    const mesKey=mes.split(' ')[0]; // "Abr"
+    const mn=MES_MN[mesKey]||0;
+
+    // Frascos que vencen en este mes
+    const frascosDelMes=ST.frascos.filter(f=>f.mn===mn);
+    const totalFrascos=frascosDelMes.reduce((s,f)=>s+(f.capital+f.renta),0);
+    const nFrascos=frascosDelMes.length;
+
+    // Reservas manuales del mes
+    const reservasManuales=ST.reservas.filter(r=>r.mes===mes).reduce((s,r)=>s+r.monto,0);
+
+    // Total reservado = frascos + manual
+    const reservado=totalFrascos+reservasManuales;
     const faltante=Math.max(0,necesidad-reservado);
     const pct=necesidad>0?Math.min(100,Math.round(reservado/necesidad*100)):0;
     const ok=pct>=100;
@@ -1766,8 +1781,14 @@ function renderReservasCards(){
           <div style="font-size:11px;color:var(--muted);margin-top:2px">${ok?'✓ Cubierto':'Faltante: '+fmtD(faltante)}</div>
         </div>
       </div>
+      <!-- Desglose reservado -->
+      <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);margin-top:8px;flex-wrap:wrap">
+        ${nFrascos>0?`<span>🍊 Frascos (${nFrascos}): <strong style="color:var(--ink)">${fmtD(totalFrascos)}</strong></span>`:''}
+        ${reservasManuales>0?`<span>📌 Manual: <strong style="color:var(--ink)">${fmtD(reservasManuales)}</strong></span>`:''}
+        ${nFrascos===0&&reservasManuales===0?`<span style="color:var(--red)">Sin reservas registradas</span>`:''}
+      </div>
       <!-- Progress bar -->
-      <div style="background:rgba(0,0,0,.06);border-radius:4px;height:6px;margin-top:12px;overflow:hidden">
+      <div style="background:rgba(0,0,0,.06);border-radius:4px;height:6px;margin-top:10px;overflow:hidden">
         <div style="background:${color};height:100%;width:${pct}%;border-radius:4px;transition:width .4s"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
