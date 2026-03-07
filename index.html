@@ -761,6 +761,9 @@ let ST=JSON.parse(localStorage.getItem('fin_v4')||'null')||{
 };
 // Patch months from seed if missing
 Object.keys(MONTHS_DATA).forEach(m=>{if(!ST.months[m])ST.months[m]=JSON.parse(JSON.stringify(MONTHS_DATA[m]))});
+// Patch personas: garantizar que siempre existe y tiene al menos 'Propio'
+if(!ST.personas||!Array.isArray(ST.personas)){ST.personas=['Propio','Gilda','Pau','Mamá','Bruno'];}
+if(!ST.personas.includes('Propio'))ST.personas.unshift('Propio');
 
 // ═══ PATCH FRASCOS DESDE SEED ═══
 // Sincroniza rentas: si un frasco del seed (identificado por capital+vto) existe en ST,
@@ -903,10 +906,11 @@ function renderMonthNavs(){
   document.getElementById('mnav-cuotas').innerHTML=mkeys.map(m=>`<button class="mbtn ${m===activeCqMes?'active':''} ${ST.months[m].paid?'paid':''}" data-mes="${m}" data-nav="cq">${m}</button>`).join('');
 }
 document.addEventListener('click',function(e){
-  const btn=e.target.closest('[data-nav]');
+  const btn=e.target.closest('button[data-nav]');
   if(!btn)return;
   const m=btn.dataset.mes;
   const nav=btn.dataset.nav;
+  if(!m||!nav)return;
   if(nav==='tar'){activeTarMes=m;renderMonthNavs();renderGastos();renderReminder();}
   else if(nav==='var'){activeVarMes=m;renderMonthNavs();renderVars();}
   else if(nav==='cq'){activeCqMes=m;renderMonthNavs();renderCuotasDetail();}
