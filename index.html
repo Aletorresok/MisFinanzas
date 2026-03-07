@@ -366,8 +366,75 @@ tr:hover td{background:#fafaf8}
   </div>
 </div>
 
+
+
+
+</div>
+
+
+
+
+
+
+
+<!-- PRECIOS HISTORICOS -->
+<div class="page" id="page-precios">
+  <div class="sec" style="margin-top:22px">
+    <div class="sh"><h2>Precios historicos</h2><span class="tag ti">tracking de compras</span><div class="sr"></div></div>
+    <div class="iform" style="flex-wrap:wrap">
+      <div class="ifg"><label>Producto</label><input type="text" id="ph-prod" placeholder="Leche, pan, nafta..." style="width:160px" list="ph-prod-list"><datalist id="ph-prod-list"></datalist></div>
+      <div class="ifg"><label>Categoria</label><select id="ph-cat" style="width:125px"><option>Alimentos</option><option>Bebidas</option><option>Limpieza</option><option>Farmacia</option><option>Combustible</option><option>Transporte</option><option>Servicios</option><option>Ropa</option><option>Electronica</option><option>Otro</option></select></div>
+      <div class="ifg"><label>Precio (ARS)</label><input type="number" id="ph-precio" placeholder="0" style="width:120px" min="0"></div>
+      <div class="ifg"><label>Unidad</label><input type="text" id="ph-unidad" placeholder="kg, lt, u" style="width:65px" value="u"></div>
+      <div class="ifg"><label>Lugar</label><input type="text" id="ph-lugar" placeholder="Coto, Dia, YPF..." style="width:125px" list="ph-lugar-list"><datalist id="ph-lugar-list"></datalist></div>
+      <div class="ifg"><label>Fecha</label><input type="date" id="ph-fecha" style="width:135px"></div>
+      <div class="ifg"><label>Nota</label><input type="text" id="ph-nota" placeholder="oferta, promo..." style="width:115px"></div>
+      <button class="btn" onclick="addPrecio()" style="align-self:flex-end">+ Registrar</button>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sh">
+      <h2>Historial</h2><span class="tag tb">evolucion de precios</span><div class="sr"></div>
+      <input type="text" id="ph-busq" placeholder="buscar producto o lugar..."
+        style="border:none;border-bottom:1.5px solid var(--muted2);background:transparent;font-family:inherit;font-size:11.5px;outline:none;color:var(--ink);padding:2px 0;width:200px"
+        oninput="renderPrecios()">
+      <select id="ph-filter-cat" onchange="renderPrecios()"
+        style="border:none;border-bottom:1.5px solid var(--muted2);background:transparent;font-family:inherit;font-size:11px;outline:none;padding:2px 0;cursor:pointer;margin-left:8px">
+        <option value="">Todas las categorias</option>
+        <option>Alimentos</option><option>Bebidas</option><option>Limpieza</option>
+        <option>Farmacia</option><option>Combustible</option><option>Transporte</option>
+        <option>Servicios</option><option>Ropa</option><option>Electronica</option><option>Otro</option>
+      </select>
+    </div>
+    <div id="ph-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center"></div>
+    <div class="g g4" style="margin-bottom:14px">
+      <div class="card"><div class="cl">Registros totales</div><div class="cv" id="ph-k-total">0</div><div class="cs">compras anotadas</div></div>
+      <div class="card"><div class="cl">Productos distintos</div><div class="cv" id="ph-k-prods">0</div><div class="cs">en seguimiento</div></div>
+      <div class="card rl"><div class="cl">Mayor suba</div><div class="cv" id="ph-k-suba">-</div><div class="cs" id="ph-k-suba-n">ultimos 2 registros</div></div>
+      <div class="card gl"><div class="cl">Mayor baja</div><div class="cv" id="ph-k-baja">-</div><div class="cs" id="ph-k-baja-n">ultimos 2 registros</div></div>
+    </div>
+    <div id="ph-grupos"></div>
+  </div>
+</div>
+
+
+
+
+
+<!-- MOVIMIENTOS -->
+<div class="page" id="page-movimientos">
+  <div style="margin-top:16px;margin-bottom:16px">
+    <div style="display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:0">
+      <button class="mvtab active" onclick="showMovTab('egresos',this)">Egresos</button>
+      <button class="mvtab" onclick="showMovTab('ingresos',this)">Ingresos</button>
+      <button class="mvtab" onclick="showMovTab('cashflow',this)">Cash Flow</button>
+      <button class="mvtab" onclick="showMovTab('cuotas',this)">Cuotas</button>
+      <button class="mvtab" onclick="showMovTab('cierre',this)">Cierre / PDF</button>
+    </div>
+  </div>
+  <div id="mov-content">
 <!-- INGRESOS -->
-<div class="page" id="page-ingresos" style="display:none">
+<div class="page" style="display:none" id="page-ingresos" style="display:none">
   <div class="sec" style="margin-top:22px">
     <div class="sh"><h2>Historial de facturas</h2><span class="tag ti">ingresos</span><div class="sr"></div></div>
     <div class="iform">
@@ -388,9 +455,8 @@ tr:hover td{background:#fafaf8}
     </div>
   </div>
 </div>
-
 <!-- EGRESOS -->
-<div class="page" id="page-egresos" style="display:none">
+<div class="page" style="display:none" id="page-egresos" style="display:none">
   <!-- PERSONAS: gestion de responsables de gastos -->
   <div class="sec" style="margin-top:22px">
     <div class="sh"><h2>Personas</h2><span class="tag tc">responsables</span><div class="sr"></div></div>
@@ -411,12 +477,7 @@ tr:hover td{background:#fafaf8}
   <div class="sec">
       <div class="sh"><h2>Tarjeta</h2><span class="tag te">por mes</span><div class="sr"></div></div>
       <div class="mnav" id="mnav-tar"></div>
-      <div class="g g4" style="margin-bottom:10px">
-        <div class="card al"><div class="cl">Propio</div><div class="cv" id="r-pro">—</div><div class="cs" id="r-pro-p">—</div></div>
-        <div class="card"><div class="cl">Gilda te debe</div><div class="cv" id="r-gil">—</div><div class="cs">tarjeta del mes</div></div>
-        <div class="card"><div class="cl">Pau te debe</div><div class="cv" id="r-pau">—</div><div class="cs">tarjeta del mes</div></div>
-        <div class="card"><div class="cl">Mamá te debe</div><div class="cv" id="r-mam">—</div><div class="cs">tarjeta del mes</div></div>
-      </div>
+      <div id="resp-cards" style="display:grid;gap:9px;grid-template-columns:repeat(4,1fr);margin-bottom:10px"></div>
       <div class="tw">
         <div class="th"><span>Ítems</span><div class="ts" id="tar-sub">Editá responsables y notas</div></div>
         <table><thead><tr><th>Concepto</th><th>Tarjeta</th><th>Cuota</th><th>Responsable</th><th>Nota</th><th class="r">Monto</th><th></th></tr></thead>
@@ -459,10 +520,8 @@ tr:hover td{background:#fafaf8}
     </div>
   </div>
   </div>
-</div>
-
 <!-- CASH FLOW -->
-<div class="page" id="page-cashflow" style="display:none">
+<div class="page" style="display:none" id="page-cashflow" style="display:none">
   <div class="sec" style="margin-top:22px">
     <div class="sh"><h2>Cash flow proyectado</h2><span class="tag tf">10 meses</span><div class="sr"></div></div>
     <div class="cf-ch">
@@ -481,9 +540,8 @@ tr:hover td{background:#fafaf8}
     <div class="note">El saldo parte del capital líquido actual y suma/resta frascos y tarjeta. No incluye ingresos ni gastos fijos/variables.</div>
   </div>
 </div>
-
 <!-- CUOTAS (integrado del dashboard de cuotas) -->
-<div class="page" id="page-cuotas" style="display:none">
+<div class="page" style="display:none" id="page-cuotas" style="display:none">
   <div class="sec" style="margin-top:22px">
     <div class="sh"><h2>Evolución 18 meses</h2><span class="tag tf">Jul 2025 — Dic 2026</span><div class="sr"></div></div>
     <div class="cf-ch">
@@ -510,9 +568,8 @@ tr:hover td{background:#fafaf8}
     </div>
   </div>
 </div>
-
 <!-- CIERRE -->
-<div class="page" id="page-cierre" style="display:none">
+<div class="page" style="display:none" id="page-cierre" style="display:none">
   <div class="sec" style="margin-top:22px">
     <div class="sh">
       <h2>Cierre mensual</h2><span class="tag tb">PDF</span><div class="sr"></div>
@@ -522,49 +579,20 @@ tr:hover td{background:#fafaf8}
     <div id="cierre-content"></div>
   </div>
 </div>
-
-<!-- PRECIOS HISTORICOS -->
-<div class="page" id="page-precios">
-  <div class="sec" style="margin-top:22px">
-    <div class="sh"><h2>Precios historicos</h2><span class="tag ti">tracking de compras</span><div class="sr"></div></div>
-    <div class="iform" style="flex-wrap:wrap">
-      <div class="ifg"><label>Producto</label><input type="text" id="ph-prod" placeholder="Leche, pan, nafta..." style="width:160px" list="ph-prod-list"><datalist id="ph-prod-list"></datalist></div>
-      <div class="ifg"><label>Categoria</label><select id="ph-cat" style="width:125px"><option>Alimentos</option><option>Bebidas</option><option>Limpieza</option><option>Farmacia</option><option>Combustible</option><option>Transporte</option><option>Servicios</option><option>Ropa</option><option>Electronica</option><option>Otro</option></select></div>
-      <div class="ifg"><label>Precio (ARS)</label><input type="number" id="ph-precio" placeholder="0" style="width:120px" min="0"></div>
-      <div class="ifg"><label>Unidad</label><input type="text" id="ph-unidad" placeholder="kg, lt, u" style="width:65px" value="u"></div>
-      <div class="ifg"><label>Lugar</label><input type="text" id="ph-lugar" placeholder="Coto, Dia, YPF..." style="width:125px" list="ph-lugar-list"><datalist id="ph-lugar-list"></datalist></div>
-      <div class="ifg"><label>Fecha</label><input type="date" id="ph-fecha" style="width:135px"></div>
-      <div class="ifg"><label>Nota</label><input type="text" id="ph-nota" placeholder="oferta, promo..." style="width:115px"></div>
-      <button class="btn" onclick="addPrecio()" style="align-self:flex-end">+ Registrar</button>
-    </div>
-  </div>
-  <div class="sec">
-    <div class="sh">
-      <h2>Historial</h2><span class="tag tb">evolucion de precios</span><div class="sr"></div>
-      <input type="text" id="ph-busq" placeholder="buscar producto o lugar..."
-        style="border:none;border-bottom:1.5px solid var(--muted2);background:transparent;font-family:inherit;font-size:11.5px;outline:none;color:var(--ink);padding:2px 0;width:200px"
-        oninput="renderPrecios()">
-      <select id="ph-filter-cat" onchange="renderPrecios()"
-        style="border:none;border-bottom:1.5px solid var(--muted2);background:transparent;font-family:inherit;font-size:11px;outline:none;padding:2px 0;cursor:pointer;margin-left:8px">
-        <option value="">Todas las categorias</option>
-        <option>Alimentos</option><option>Bebidas</option><option>Limpieza</option>
-        <option>Farmacia</option><option>Combustible</option><option>Transporte</option>
-        <option>Servicios</option><option>Ropa</option><option>Electronica</option><option>Otro</option>
-      </select>
-    </div>
-    <div id="ph-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center"></div>
-    <div class="g g4" style="margin-bottom:14px">
-      <div class="card"><div class="cl">Registros totales</div><div class="cv" id="ph-k-total">0</div><div class="cs">compras anotadas</div></div>
-      <div class="card"><div class="cl">Productos distintos</div><div class="cv" id="ph-k-prods">0</div><div class="cs">en seguimiento</div></div>
-      <div class="card rl"><div class="cl">Mayor suba</div><div class="cv" id="ph-k-suba">-</div><div class="cs" id="ph-k-suba-n">ultimos 2 registros</div></div>
-      <div class="card gl"><div class="cl">Mayor baja</div><div class="cv" id="ph-k-baja">-</div><div class="cs" id="ph-k-baja-n">ultimos 2 registros</div></div>
-    </div>
-    <div id="ph-grupos"></div>
   </div>
 </div>
 
+<!-- PLANIFICACION -->
+<div class="page" id="page-planificacion">
+  <div style="margin-top:16px;margin-bottom:16px">
+    <div style="display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:0">
+      <button class="mvtab active" onclick="showPlanTab('reservas',this)">Reservas</button>
+      <button class="mvtab" onclick="showPlanTab('deudas',this)">Deudas</button>
+    </div>
+  </div>
+  <div id="plan-content">
 <!-- DEUDAS -->
-<div class="page" id="page-deudas" style="display:none">
+<div class="page" style="display:none" id="page-deudas" style="display:none">
   <div class="sec" style="margin-top:22px">
     <div class="sh"><h2>Deudas a cobrar</h2><span class="tag tc">quién te debe</span><div class="sr"></div></div>
     <div class="iform" style="flex-wrap:wrap">
@@ -599,9 +627,8 @@ tr:hover td{background:#fafaf8}
     </div>
   </div>
 </div>
-
 <!-- RESERVAS FUTURAS -->
-<div class="page" id="page-reservas" style="display:none">
+<div class="page" style="display:none" id="page-reservas" style="display:none">
   <div class="sec" style="margin-top:22px">
     <div class="sh"><h2>Reservas futuras</h2><span class="tag tf">cuánto necesitás reservar</span><div class="sr"></div></div>
     <div class="note" style="margin-bottom:16px">Calculado automáticamente en base a tus gastos fijos, variables y tarjeta de cada mes. Te indica cuánto reservar hoy para cubrir cada mes.</div>
@@ -630,30 +657,7 @@ tr:hover td{background:#fafaf8}
     </div>
   </div>
 </div>
-
-<!-- MOVIMIENTOS -->
-<div class="page" id="page-movimientos">
-  <div style="margin-top:16px;margin-bottom:16px">
-    <div style="display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:0">
-      <button class="mvtab active" onclick="showMovTab('egresos',this)">Egresos</button>
-      <button class="mvtab" onclick="showMovTab('ingresos',this)">Ingresos</button>
-      <button class="mvtab" onclick="showMovTab('cashflow',this)">Cash Flow</button>
-      <button class="mvtab" onclick="showMovTab('cuotas',this)">Cuotas</button>
-      <button class="mvtab" onclick="showMovTab('cierre',this)">Cierre / PDF</button>
-    </div>
   </div>
-  <div id="mov-content"></div>
-</div>
-
-<!-- PLANIFICACION -->
-<div class="page" id="page-planificacion">
-  <div style="margin-top:16px;margin-bottom:16px">
-    <div style="display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:0">
-      <button class="mvtab active" onclick="showPlanTab('reservas',this)">Reservas</button>
-      <button class="mvtab" onclick="showPlanTab('deudas',this)">Deudas</button>
-    </div>
-  </div>
-  <div id="plan-content"></div>
 </div>
 
 <!-- CONFIG MODAL -->
@@ -932,13 +936,26 @@ function renderGastos(){
   const tot=md.items.reduce((s,g)=>s+g.m,0);
   document.getElementById('gas-tot').textContent=fmt(tot);
   document.getElementById('tar-sub').innerHTML=`Total <strong>${fmt(tot)}</strong>${md.paid?' · <span class="bdg bg">✓ Pagado</span>':''}`;
-  const tots={Propio:0,Gilda:0,Pau:0,'Mamá':0};
-  md.items.forEach(g=>{if(g.r in tots)tots[g.r]+=g.m;else tots.Propio+=g.m});
-  document.getElementById('r-pro').textContent=fmt(tots.Propio);
-  document.getElementById('r-pro-p').textContent=pct(tots.Propio,tot)+' del total';
-  document.getElementById('r-gil').textContent=fmt(tots.Gilda);
-  document.getElementById('r-pau').textContent=fmt(tots.Pau);
-  document.getElementById('r-mam').textContent=fmt(tots['Mamá']);
+  // Cards dinámicas por persona
+  const tots={};
+  (ST.personas||['Propio']).forEach(p=>tots[p]=0);
+  md.items.forEach(g=>{
+    if(g.r&&tots[g.r]!==undefined)tots[g.r]+=g.m;
+    else tots['Propio']=(tots['Propio']||0)+g.m;
+  });
+  const cardsWrap=document.getElementById('resp-cards');
+  if(cardsWrap){
+    const cols=Math.min(Object.keys(tots).length,4);
+    cardsWrap.style.gridTemplateColumns='repeat('+cols+',1fr)';
+    cardsWrap.innerHTML=Object.entries(tots).map(([p,v],i)=>{
+      const isPropio=p==='Propio';
+      return`<div class="card ${isPropio?'al':''}">`+
+        `<div class="cl">${isPropio?'Propio':p+' te debe'}</div>`+
+        `<div class="cv ${isPropio?'':'pos'}">${fmt(v)}</div>`+
+        `<div class="cs">${isPropio?pct(v,tot)+' del total':'tarjeta del mes'}</div>`+
+        `</div>`;
+    }).join('');
+  }
 }
 function addGasto(){ST.months[activeTarMes].items.push({c:'Nuevo ítem',t:'',q:'',m:0,r:'Propio',n:''});renderGastos()}
 
@@ -1867,21 +1884,12 @@ function deleteReserva(id){
 let activeMovTab = 'egresos';
 let activePlanTab = 'reservas';
 
-// IDs de todas las sub-páginas que se manejan con display
-const _SUBTABS = ['egresos','ingresos','cashflow','cuotas','cierre','reservas','deudas'];
-
 function showPage(id, btn) {
-  // Ocultar todas las sub-páginas primero
-  _SUBTABS.forEach(tab => {
-    const p = document.getElementById('page-' + tab);
-    if (p) p.style.display = 'none';
-  });
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ntab,.tab').forEach(t => t.classList.remove('active'));
   const page = document.getElementById('page-' + id);
   if (page) page.classList.add('active');
   if (btn) btn.classList.add('active');
-  // sub-tabs
   if (id === 'movimientos') {
     const activeBtn = document.querySelector('#page-movimientos .mvtab.active') || document.querySelector('#page-movimientos .mvtab');
     showMovTab(activeMovTab, activeBtn);
@@ -1894,17 +1902,12 @@ function showPage(id, btn) {
 
 function showMovTab(id, btn) {
   activeMovTab = id;
-  // Mostrar/ocultar las páginas reales — sin copiar innerHTML (evita IDs duplicados)
   ['egresos','ingresos','cashflow','cuotas','cierre'].forEach(tab => {
     const p = document.getElementById('page-' + tab);
     if (p) p.style.display = tab === id ? 'block' : 'none';
   });
-  const dst = document.getElementById('mov-content');
-  if (dst) dst.innerHTML = '';
-  // update active tab button
   document.querySelectorAll('#page-movimientos .mvtab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  // trigger renders
   if (id === 'egresos') { renderPersonasChips(); renderGastos(); renderFijos(); renderVars(); renderReminder(); }
   if (id === 'ingresos') { renderIngresos(); }
   if (id === 'cashflow') { renderCashFlow(); }
@@ -1919,8 +1922,6 @@ function showPlanTab(id, btn) {
     const p = document.getElementById('page-' + tab);
     if (p) p.style.display = tab === id ? 'block' : 'none';
   });
-  const dst = document.getElementById('plan-content');
-  if (dst) dst.innerHTML = '';
   document.querySelectorAll('#page-planificacion .mvtab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
   if (id === 'reservas') { renderReservasCards(); renderReservas(); }
