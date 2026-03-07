@@ -1687,18 +1687,24 @@ function addDeuda(){
 }
 
 // Calcula deudas de tarjeta automáticas por persona (meses no pagados)
+// Convierte "Mar 2026" → Date para comparar
+function mesStrToDate(m){
+  const meses={Ene:0,Feb:1,Mar:2,Abr:3,May:4,Jun:5,Jul:6,Ago:7,Sep:8,Oct:9,Nov:10,Dic:11};
+  const [nom,anio]=m.split(' ');
+  return new Date(parseInt(anio), meses[nom]||0, 1);
+}
+
 // Devuelve filas individuales: una por persona+mes, solo meses <= hoy, no cobrados
 function calcDeudasTarjeta(){
   const personas=(ST.personas||[]).filter(p=>p!=='Propio');
   const result=[];
-  // Mes actual como "YYYY-MM" para comparar
   const ahora=new Date();
-  const mesActual=ahora.getFullYear()+'-'+(String(ahora.getMonth()+1).padStart(2,'0'));
+  const inicioMesActual=new Date(ahora.getFullYear(), ahora.getMonth(), 1);
   personas.forEach(persona=>{
     const cobrados=(ST.cobradoTarjeta&&ST.cobradoTarjeta[persona])||[];
     Object.entries(ST.months).forEach(([mes,md])=>{
       // Solo meses <= mes actual (no futuros)
-      if(mes>mesActual)return;
+      if(mesStrToDate(mes)>inicioMesActual)return;
       // Ya cobrado para esta persona en este mes
       if(cobrados.includes(mes))return;
       const subtot=(md.items||[]).filter(g=>g.r===persona).reduce((s,g)=>s+g.m,0);
@@ -1706,7 +1712,7 @@ function calcDeudasTarjeta(){
     });
   });
   // Ordenar por mes asc, luego persona
-  result.sort((a,b)=>a.mes.localeCompare(b.mes)||a.persona.localeCompare(b.persona));
+  result.sort((a,b)=>mesStrToDate(a.mes)-mesStrToDate(b.mes)||a.persona.localeCompare(b.persona));
   return result;
 }
 
