@@ -1687,37 +1687,36 @@ function addDeuda(){
 }
 
 // Calcula deudas de tarjeta automáticas por persona (meses no pagados)
+// Devuelve filas individuales: una por persona+mes, solo meses <= hoy, no cobrados
 function calcDeudasTarjeta(){
   const personas=(ST.personas||[]).filter(p=>p!=='Propio');
   const result=[];
+  // Mes actual como "YYYY-MM" para comparar
+  const ahora=new Date();
+  const mesActual=ahora.getFullYear()+'-'+(String(ahora.getMonth()+1).padStart(2,'0'));
   personas.forEach(persona=>{
-    // Buscar en ST.cobradoTarjeta los meses ya marcados como cobrados para esta persona
     const cobrados=(ST.cobradoTarjeta&&ST.cobradoTarjeta[persona])||[];
-    let total=0;
-    const mesesDeuda=[];
     Object.entries(ST.months).forEach(([mes,md])=>{
-      if(cobrados.includes(mes))return; // ya cobrado
+      // Solo meses <= mes actual (no futuros)
+      if(mes>mesActual)return;
+      // Ya cobrado para esta persona en este mes
+      if(cobrados.includes(mes))return;
       const subtot=(md.items||[]).filter(g=>g.r===persona).reduce((s,g)=>s+g.m,0);
-      if(subtot>0){total+=subtot;mesesDeuda.push({mes,subtot,paid:md.paid});}
+      if(subtot>0) result.push({persona,mes,monto:subtot});
     });
-    if(total>0) result.push({persona,total,meses:mesesDeuda});
   });
+  // Ordenar por mes asc, luego persona
+  result.sort((a,b)=>a.mes.localeCompare(b.mes)||a.persona.localeCompare(b.persona));
   return result;
 }
 
-function cobrarTarjetaPersona(persona){
-  // Marcar todos los meses actuales como cobrados para esta persona
+function cobrarTarjetaMes(persona,mes){
   if(!ST.cobradoTarjeta)ST.cobradoTarjeta={};
   if(!ST.cobradoTarjeta[persona])ST.cobradoTarjeta[persona]=[];
-  Object.keys(ST.months).forEach(mes=>{
-    const subtot=(ST.months[mes].items||[]).filter(g=>g.r===persona).reduce((s,g)=>s+g.m,0);
-    if(subtot>0&&!ST.cobradoTarjeta[persona].includes(mes)){
-      ST.cobradoTarjeta[persona].push(mes);
-    }
-  });
+  if(!ST.cobradoTarjeta[persona].includes(mes)) ST.cobradoTarjeta[persona].push(mes);
   autosave();
   renderDeudas();
-  toast('✓ '+persona+' marcado como cobrado');
+  toast('✓ '+persona+' — '+mes+' cobrado');
 }
 
 function renderDeudas(){
@@ -1733,7 +1732,7 @@ function renderDeudas(){
   let rowsManuales = ST.deudas.filter(d=>!filtro||d.estado===filtro);
 
   // KPIs — suma tarjeta + manuales pendientes
-  const totTarjeta = filtro==='cobrada'?0:deudasTarjeta.reduce((s,d)=>s+d.total,0);
+  const totTarjeta = filtro==='cobrada'?0:deudasTarjeta.reduce((s,d)=>s+d.monto,0);
   const pend = ST.deudas.filter(d=>d.estado==='pendiente');
   const totManual = pend.reduce((s,d)=>s+d.monto,0);
   const totPend = totTarjeta + totManual;
@@ -1757,19 +1756,22 @@ function renderDeudas(){
   const tbody = document.getElementById('d-tbody');
   let html = '';
 
-  // Sección tarjeta automática
+  // Sección tarjeta automática — una fila por persona+mes
   if(filtro!=='cobrada'&&deudasTarjeta.length){
-    html += `<tr><td colspan="7" style="background:var(--cream);padding:6px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:500">💳 Tarjeta acumulada</td></tr>`;
+    html += `<tr><td colspan="7" style="background:var(--cream);padding:6px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:500">💳 Tarjeta — por mes</td></tr>`;
     html += deudasTarjeta.map(d=>{
-      const detalle=d.meses.map(m=>`${m.mes}: ${fmtD(m.subtot)}${m.paid?' ✓':''}`).join(' · ');
+      // Formatear mes "YYYY-MM" → "Ene 2025"
+      const [y,m]=d.mes.split('-');
+      const nombreMes=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][parseInt(m)-1];
+      const mesLabel=nombreMes+' '+y;
       return `<tr>
         <td><strong>${d.persona}</strong></td>
-        <td style="font-size:10px;color:var(--muted)">${detalle}</td>
-        <td style="color:var(--muted);font-size:10px">acumulado</td>
+        <td style="font-size:10px;color:var(--muted)">Tarjeta ${mesLabel}</td>
+        <td style="color:var(--muted);font-size:10px">${mesLabel}</td>
         <td>—</td>
-        <td class="r"><strong class="pos">${fmtD(d.total)}</strong></td>
+        <td class="r"><strong class="pos">${fmtD(d.monto)}</strong></td>
         <td><span class="bdg br">Pendiente</span></td>
-        <td><button class="delbtn" style="color:var(--green);font-size:10px;border:1px solid var(--green);padding:2px 7px;border-radius:3px" onclick="cobrarTarjetaPersona('${d.persona}')">✓ Cobrado</button></td>
+        <td><button class="delbtn" style="color:var(--green);font-size:10px;border:1px solid var(--green);padding:2px 7px;border-radius:3px" onclick="cobrarTarjetaMes('${d.persona}','${d.mes}')">✓ Cobrado</button></td>
       </tr>`;
     }).join('');
   }
