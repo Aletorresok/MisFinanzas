@@ -895,7 +895,8 @@ function renderFrascos(){
     const cls=days<=7&&days>=0?'fvs':days<=14&&days>7?'fvc':'';
     const dayLbl=days<=14&&days>=0?` (${days===0?'hoy':days+'d'})`:'';
     const c=MC[f.mes]||'var(--muted)';
-    return`<tr><td style="color:var(--muted);font-size:10px">${i+1}</td><td>${fmtD(f.capital)}</td><td class="pos">+${fmtD(f.renta)}</td><td class="r"><strong>${fmtD(tot)}</strong></td><td class="r"><span class="${cls}">${f.vto}${dayLbl}</span></td><td><span class="bdg" style="background:${c}18;color:${c}">${f.mes}</span></td><td><button class="delbtn" onclick="delFrasco(${i})">✕</button></td></tr>`;
+    const cobrarBtn=`<button class="delbtn" style="color:var(--green);font-size:10px;border:1px solid var(--green);padding:2px 7px;border-radius:3px;margin-right:4px" onclick="cobrarFrasco(${i})">✓</button>`;
+    return`<tr><td style="color:var(--muted);font-size:10px">${i+1}</td><td>${fmtD(f.capital)}</td><td class="pos">+${fmtD(f.renta)}</td><td class="r"><strong>${fmtD(tot)}</strong></td><td class="r"><span class="${cls}">${f.vto}${dayLbl}</span></td><td><span class="bdg" style="background:${c}18;color:${c}">${f.mes}</span></td><td style="display:flex;gap:2px;align-items:center">${cobrarBtn}<button class="delbtn" onclick="delFrasco(${i})">✕</button></td></tr>`;
   }).join('');
   const tt=tc+tr;
   document.getElementById('th-cap').textContent=fmtD(tc);
@@ -934,6 +935,18 @@ function saveFrasco(){
   ST.frascos.sort((a,b)=>a.mn-b.mn);
   closeFrascoModal();renderFrascos();renderCashFlow();recalc();renderAlertVto();
   toast('✓ Frasco agregado');autosave();
+}
+function cobrarFrasco(i){
+  const f=ST.frascos[i];
+  if(!f)return;
+  const total=f.capital+f.renta;
+  const nxActual=parseFloat(document.getElementById('cap-nx').value)||0;
+  const nuevoNx=nxActual+total;
+  document.getElementById('cap-nx').value=nuevoNx.toFixed(2);
+  saveCapital();
+  ST.frascos.splice(i,1);
+  renderFrascos();renderCashFlow();recalc();renderAlertVto();autosave();
+  toast('✓ Frasco cobrado — +'+fmtD(total)+' sumado a Naranja X');
 }
 function delFrasco(i){if(!confirm('¿Eliminar?'))return;ST.frascos.splice(i,1);renderFrascos();renderCashFlow();recalc();renderAlertVto();autosave()}
 
