@@ -401,6 +401,7 @@ tr:hover td{background:#fafaf8}
         <span style="font-size:11px;color:var(--muted)">Nueva persona:</span>
         <input type="text" id="persona-nueva" placeholder="nombre…" maxlength="22"
           style="border:none;border-bottom:1.5px solid var(--gold);background:transparent;font-family:Geist Mono,monospace;font-size:12px;outline:none;color:var(--ink);padding:2px 0;width:140px"
+          oninput="_pnv=this.value"
           onkeydown="if(event.key==='Enter')addPersona()">
         <button class="btn" onmousedown="event.preventDefault();addPersona()">+ Agregar</button>
       </div>
@@ -833,16 +834,10 @@ async function fetchMEP(){
   document.getElementById('mep-st').textContent='buscando…';
   try{
     const r=await fetch('https://dolarapi.com/v1/dolares/bolsa');
-    if(!r.ok) throw new Error('API error');
+    if(!r.ok)throw new Error('err');
     const d=await r.json();
     const v=parseFloat(d.venta);
-    if(v>500&&v<5000){
-      document.getElementById('mep').value=v.toFixed(2);
-      document.getElementById('mep-st').textContent='actualizado hoy';
-      recalc();
-      toast('✓ MEP: $'+v.toFixed(0));
-      return;
-    }
+    if(v>500&&v<5000){document.getElementById('mep').value=v.toFixed(2);document.getElementById('mep-st').textContent='actualizado hoy';recalc();toast('✓ MEP: $'+v.toFixed(0));return}
   }catch(e){}
   document.getElementById('mep-st').textContent='sin conexión';
 }
@@ -907,7 +902,6 @@ function renderMonthNavs(){
   document.getElementById('mnav-var').innerHTML=vkeys.map(m=>`<button class="mbtn ${m===activeVarMes?'active':''}" data-mes="${m}" data-nav="var">${m}</button>`).join('');
   document.getElementById('mnav-cuotas').innerHTML=mkeys.map(m=>`<button class="mbtn ${m===activeCqMes?'active':''} ${ST.months[m].paid?'paid':''}" data-mes="${m}" data-nav="cq">${m}</button>`).join('');
 }
-// Event delegation para los navs de mes — evita problemas con comillas en onclick
 document.addEventListener('click',function(e){
   const btn=e.target.closest('[data-nav]');
   if(!btn)return;
@@ -1092,7 +1086,7 @@ function renderCuotasEvolution(){
     const h=Math.max(tot/maxT*H,3);
     const color=paid?'var(--muted2)':'var(--red)';
     const lbl=m.split(' ')[0].slice(0,3);
-    return`<div class="evc" onclick="activeCqMes='${m}';renderMonthNavs();renderCuotasDetail()" title="${m}: ${fmt(tot)}">
+    return`<div class="evc" data-mes="${m}" data-nav="cq" title="${m}: ${fmt(tot)}">
       <div class="eb" style="height:${h}px;background:${color}"></div>
       <div class="el">${lbl}</div>
     </div>`;
@@ -1438,15 +1432,18 @@ function renderPersonasChips(){
       '</span>';
   }).join('');
 }
+let _pnv='';
 function addPersona(){
   const inp=document.getElementById('persona-nueva');
-  const name=(inp.value||'').trim();
-  if(!name){inp.focus();toast('Ingresa un nombre');return}
+  const name=(_pnv||inp.value||'').trim();
+  if(!name){toast('Ingresa un nombre');return}
   if(ST.personas.includes(name)){toast('Ya existe');return}
   ST.personas.push(name);
+  _pnv='';
   inp.value='';
-  inp.focus();
   renderPersonasChips();
+  renderGastos();
+  renderReminder();
   toast('✓ '+name+' agregado');
   autosave();
 }
