@@ -402,7 +402,7 @@ tr:hover td{background:#fafaf8}
         <input type="text" id="persona-nueva" placeholder="nombre…" maxlength="22"
           style="border:none;border-bottom:1.5px solid var(--gold);background:transparent;font-family:Geist Mono,monospace;font-size:12px;outline:none;color:var(--ink);padding:2px 0;width:140px"
           onkeydown="if(event.key==='Enter')addPersona()">
-        <button class="btn" onclick="addPersona()">+ Agregar</button>
+        <button class="btn" onmousedown="event.preventDefault();addPersona()">+ Agregar</button>
       </div>
     </div>
   </div>
@@ -832,11 +832,17 @@ function renderAlertVto(){
 async function fetchMEP(){
   document.getElementById('mep-st').textContent='buscando…';
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:150,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:'Argentine peso MEP dollar rate today. Reply ONLY with the number.'}]})});
+    const r=await fetch('https://dolarapi.com/v1/dolares/bolsa');
+    if(!r.ok) throw new Error('API error');
     const d=await r.json();
-    const txt=(d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
-    const m=txt.match(/[\d.,]+/);
-    if(m){const v=parseFloat(m[0].replace(',','.'));if(v>500&&v<5000){document.getElementById('mep').value=v.toFixed(2);document.getElementById('mep-st').textContent='actualizado hoy';recalc();toast('✓ MEP: $'+v.toFixed(0));return}}
+    const v=parseFloat(d.venta);
+    if(v>500&&v<5000){
+      document.getElementById('mep').value=v.toFixed(2);
+      document.getElementById('mep-st').textContent='actualizado hoy';
+      recalc();
+      toast('✓ MEP: $'+v.toFixed(0));
+      return;
+    }
   }catch(e){}
   document.getElementById('mep-st').textContent='sin conexión';
 }
@@ -896,11 +902,21 @@ function delFrasco(i){if(!confirm('¿Eliminar?'))return;ST.frascos.splice(i,1);r
 // ═══ MONTH NAVS ═══
 function renderMonthNavs(){
   const mkeys=Object.keys(ST.months);
-  document.getElementById('mnav-tar').innerHTML=mkeys.map(m=>`<button class="mbtn ${m===activeTarMes?'active':''} ${ST.months[m].paid?'paid':''}" onclick="activeTarMes='${m}';renderMonthNavs();renderGastos();renderReminder()">${m}${ST.months[m].paid?' ✓':''}</button>`).join('');
+  document.getElementById('mnav-tar').innerHTML=mkeys.map(m=>`<button class="mbtn ${m===activeTarMes?'active':''} ${ST.months[m].paid?'paid':''}" data-mes="${m}" data-nav="tar">${m}${ST.months[m].paid?' ✓':''}</button>`).join('');
   const vkeys=['Mar 2026','Abr 2026','May 2026','Jun 2026'];
-  document.getElementById('mnav-var').innerHTML=vkeys.map(m=>`<button class="mbtn ${m===activeVarMes?'active':''}" onclick="activeVarMes='${m}';renderMonthNavs();renderVars()">${m}</button>`).join('');
-  document.getElementById('mnav-cuotas').innerHTML=mkeys.map(m=>`<button class="mbtn ${m===activeCqMes?'active':''} ${ST.months[m].paid?'paid':''}" onclick="activeCqMes='${m}';renderMonthNavs();renderCuotasDetail()">${m}</button>`).join('');
+  document.getElementById('mnav-var').innerHTML=vkeys.map(m=>`<button class="mbtn ${m===activeVarMes?'active':''}" data-mes="${m}" data-nav="var">${m}</button>`).join('');
+  document.getElementById('mnav-cuotas').innerHTML=mkeys.map(m=>`<button class="mbtn ${m===activeCqMes?'active':''} ${ST.months[m].paid?'paid':''}" data-mes="${m}" data-nav="cq">${m}</button>`).join('');
 }
+// Event delegation para los navs de mes — evita problemas con comillas en onclick
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('[data-nav]');
+  if(!btn)return;
+  const m=btn.dataset.mes;
+  const nav=btn.dataset.nav;
+  if(nav==='tar'){activeTarMes=m;renderMonthNavs();renderGastos();renderReminder();}
+  else if(nav==='var'){activeVarMes=m;renderMonthNavs();renderVars();}
+  else if(nav==='cq'){activeCqMes=m;renderMonthNavs();renderCuotasDetail();}
+});
 
 // ═══ GASTOS ═══
 function renderGastos(){
@@ -1425,10 +1441,11 @@ function renderPersonasChips(){
 function addPersona(){
   const inp=document.getElementById('persona-nueva');
   const name=(inp.value||'').trim();
-  if(!name){toast('Ingresa un nombre');return}
+  if(!name){inp.focus();toast('Ingresa un nombre');return}
   if(ST.personas.includes(name)){toast('Ya existe');return}
   ST.personas.push(name);
   inp.value='';
+  inp.focus();
   renderPersonasChips();
   toast('✓ '+name+' agregado');
   autosave();
