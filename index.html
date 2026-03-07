@@ -1867,7 +1867,15 @@ function deleteReserva(id){
 let activeMovTab = 'egresos';
 let activePlanTab = 'reservas';
 
+// IDs de todas las sub-páginas que se manejan con display
+const _SUBTABS = ['egresos','ingresos','cashflow','cuotas','cierre','reservas','deudas'];
+
 function showPage(id, btn) {
+  // Ocultar todas las sub-páginas primero
+  _SUBTABS.forEach(tab => {
+    const p = document.getElementById('page-' + tab);
+    if (p) p.style.display = 'none';
+  });
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ntab,.tab').forEach(t => t.classList.remove('active'));
   const page = document.getElementById('page-' + id);
