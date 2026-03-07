@@ -1025,17 +1025,45 @@ function confirmAddGasto(){
   const resp=document.getElementById('ng-resp').value||'Propio';
   if(!concepto){toast('Ingresá un concepto');return;}
   if(!monto){toast('Ingresá el monto');return;}
-  const q=cuotas>1?`1/${cuotas}`:'';
   if(!ST.months[activeTarMes])return;
-  ST.months[activeTarMes].items.push({c:concepto,t:tarjeta,q,m:monto,r:resp,n:''});
+
+  // Obtener meses ordenados cronológicamente
+  const mesesOrdenados=Object.keys(ST.months).sort((a,b)=>mesStrToDate(a)-mesStrToDate(b));
+  const idxInicio=mesesOrdenados.indexOf(activeTarMes);
+  if(idxInicio===-1)return;
+
+  // Agregar ítem en cada cuota
+  for(let i=0;i<cuotas;i++){
+    const idxMes=idxInicio+i;
+    // Si el mes no existe aún, crearlo
+    const mesKey=idxMes<mesesOrdenados.length
+      ? mesesOrdenados[idxMes]
+      : _nextMesKey(mesesOrdenados[mesesOrdenados.length-1], idxMes-(mesesOrdenados.length-1));
+    if(!ST.months[mesKey]) ST.months[mesKey]={paid:false,total:0,items:[]};
+    const q=cuotas>1?`${i+1}/${cuotas}`:'';
+    ST.months[mesKey].items.push({c:concepto,t:tarjeta,q,m:monto,r:resp,n:''});
+  }
+
   // Limpiar form
   document.getElementById('ng-concepto').value='';
   document.getElementById('ng-monto').value='';
   document.getElementById('ng-cuotas').value='1';
   document.getElementById('ng-tarjeta').value='';
   document.getElementById('form-gasto').style.display='none';
-  renderGastos();recalc();autosave();
-  toast('✓ Ítem agregado');
+  renderGastos();renderMonthNavs();recalc();autosave();
+  const msg=cuotas>1?`✓ ${cuotas} cuotas agregadas desde ${activeTarMes}`:'✓ Ítem agregado';
+  toast(msg);
+}
+
+// Genera la key del mes siguiente a `mesKey` + `n` meses adelante
+function _nextMesKey(mesKey, n){
+  const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const [nom,anio]=mesKey.split(' ');
+  let m=MESES.indexOf(nom);
+  let y=parseInt(anio);
+  m+=n;
+  while(m>=12){m-=12;y++;}
+  return MESES[m]+' '+y;
 }
 function addGasto(){showFormGasto();}
 
