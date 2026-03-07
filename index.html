@@ -761,9 +761,6 @@ let ST=JSON.parse(localStorage.getItem('fin_v4')||'null')||{
 };
 // Patch months from seed if missing
 Object.keys(MONTHS_DATA).forEach(m=>{if(!ST.months[m])ST.months[m]=JSON.parse(JSON.stringify(MONTHS_DATA[m]))});
-// Patch personas: garantizar que siempre existe y tiene al menos 'Propio'
-if(!ST.personas||!Array.isArray(ST.personas)){ST.personas=['Propio','Gilda','Pau','Mamá','Bruno'];}
-if(!ST.personas.includes('Propio'))ST.personas.unshift('Propio');
 
 // ═══ PATCH FRASCOS DESDE SEED ═══
 // Sincroniza rentas: si un frasco del seed (identificado por capital+vto) existe en ST,
@@ -906,11 +903,10 @@ function renderMonthNavs(){
   document.getElementById('mnav-cuotas').innerHTML=mkeys.map(m=>`<button class="mbtn ${m===activeCqMes?'active':''} ${ST.months[m].paid?'paid':''}" data-mes="${m}" data-nav="cq">${m}</button>`).join('');
 }
 document.addEventListener('click',function(e){
-  const btn=e.target.closest('button[data-nav]');
+  const btn=e.target.closest('[data-nav]');
   if(!btn)return;
   const m=btn.dataset.mes;
   const nav=btn.dataset.nav;
-  if(!m||!nav)return;
   if(nav==='tar'){activeTarMes=m;renderMonthNavs();renderGastos();renderReminder();}
   else if(nav==='var'){activeVarMes=m;renderMonthNavs();renderVars();}
   else if(nav==='cq'){activeCqMes=m;renderMonthNavs();renderCuotasDetail();}
@@ -1879,7 +1875,8 @@ function showPage(id, btn) {
   if (btn) btn.classList.add('active');
   // sub-tabs
   if (id === 'movimientos') {
-    showMovTab(activeMovTab, document.querySelector('.mvtab.active') || document.querySelector('#page-movimientos .mvtab'));
+    const activeBtn = document.querySelector('#page-movimientos .mvtab.active') || document.querySelector('#page-movimientos .mvtab');
+    showMovTab(activeMovTab, activeBtn);
   }
   if (id === 'planificacion') {
     showPlanTab(activePlanTab, document.querySelector('#page-planificacion .mvtab.active') || document.querySelector('#page-planificacion .mvtab'));
@@ -1889,10 +1886,13 @@ function showPage(id, btn) {
 
 function showMovTab(id, btn) {
   activeMovTab = id;
-  // copy content from hidden page into mov-content
-  const src = document.getElementById('page-' + id);
+  // Mostrar/ocultar las páginas reales — sin copiar innerHTML (evita IDs duplicados)
+  ['egresos','ingresos','cashflow','cuotas','cierre'].forEach(tab => {
+    const p = document.getElementById('page-' + tab);
+    if (p) p.style.display = tab === id ? 'block' : 'none';
+  });
   const dst = document.getElementById('mov-content');
-  if (src && dst) dst.innerHTML = src.innerHTML;
+  if (dst) dst.innerHTML = '';
   // update active tab button
   document.querySelectorAll('#page-movimientos .mvtab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -1902,15 +1902,17 @@ function showMovTab(id, btn) {
   if (id === 'cashflow') { renderCashFlow(); }
   if (id === 'cuotas') { renderCuotasEvolution(); renderCuotasDetail(); }
   if (id === 'cierre') { renderCierre(); }
-  // re-bind event handlers after innerHTML copy (for selects/inputs)
-  rebindMovimientos(id);
+  renderMonthNavs();
 }
 
 function showPlanTab(id, btn) {
   activePlanTab = id;
-  const src = document.getElementById('page-' + id);
+  ['reservas','deudas'].forEach(tab => {
+    const p = document.getElementById('page-' + tab);
+    if (p) p.style.display = tab === id ? 'block' : 'none';
+  });
   const dst = document.getElementById('plan-content');
-  if (src && dst) dst.innerHTML = src.innerHTML;
+  if (dst) dst.innerHTML = '';
   document.querySelectorAll('#page-planificacion .mvtab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
   if (id === 'reservas') { renderReservasCards(); renderReservas(); }
