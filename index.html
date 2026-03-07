@@ -484,7 +484,25 @@ tr:hover td{background:#fafaf8}
         <tbody id="gas-tbody"></tbody>
         <tfoot><tr class="tf2"><td colspan="5"><strong>TOTAL</strong></td><td class="r" id="gas-tot">—</td><td></td></tr></tfoot></table>
       </div>
-      <button class="vadd" onclick="addGasto()">+ agregar ítem</button>
+      <div id="form-gasto" style="display:none;background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-top:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div class="ifg"><label>Concepto</label><input type="text" id="ng-concepto" placeholder="ej: Supermercado" style="width:160px"></div>
+          <div class="ifg"><label>Tarjeta</label><select id="ng-tarjeta" style="font-family:'Geist Mono',monospace;font-size:11px;border:none;border-bottom:1.5px solid var(--border);background:transparent;padding:2px 0;outline:none">
+            <option value="">— ninguna —</option>
+            <option>Visa Provincia</option><option>Master Provincia</option>
+            <option>BBVA Visa</option><option>BBVA Master</option>
+            <option>Visa Nacion</option><option>Master Nacion</option>
+          </select></div>
+          <div class="ifg"><label>Monto</label><input type="number" id="ng-monto" placeholder="0" style="width:110px" min="0"></div>
+          <div class="ifg"><label>Cuotas</label><input type="number" id="ng-cuotas" placeholder="1" style="width:60px" min="1" max="60" value="1"></div>
+          <div class="ifg"><label>Responsable</label><select id="ng-resp" style="font-family:'Geist Mono',monospace;font-size:11px;border:none;border-bottom:1.5px solid var(--border);background:transparent;padding:2px 0;outline:none"></select></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn" onclick="confirmAddGasto()">+ Agregar</button>
+            <button class="btn" style="background:transparent;color:var(--muted);border:1px solid var(--border)" onclick="document.getElementById('form-gasto').style.display='none'">Cancelar</button>
+          </div>
+        </div>
+      </div>
+      <button class="vadd" onclick="showFormGasto()">+ agregar ítem</button>
     </div>
     <div class="sec">
       <div class="sh"><h2>Gastos fijos</h2><span class="tag te">mensuales</span><div class="sr"></div></div>
@@ -492,7 +510,17 @@ tr:hover td{background:#fafaf8}
         <div class="th"><span>Fijos</span><div class="ts">Total: <strong id="fij-tot">—</strong></div></div>
         <table><thead><tr><th>Concepto</th><th class="r">Monto</th><th></th></tr></thead><tbody id="fij-tbody"></tbody></table>
       </div>
-      <button class="vadd" onclick="addFijo()">+ agregar fijo</button>
+      <div id="form-fijo" style="display:none;background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-top:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div class="ifg"><label>Concepto</label><input type="text" id="nf-concepto" placeholder="ej: Alquiler" style="width:160px"></div>
+          <div class="ifg"><label>Monto mensual</label><input type="number" id="nf-monto" placeholder="0" style="width:130px" min="0"></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn" onclick="confirmAddFijo()">+ Agregar</button>
+            <button class="btn" style="background:transparent;color:var(--muted);border:1px solid var(--border)" onclick="document.getElementById('form-fijo').style.display='none'">Cancelar</button>
+          </div>
+        </div>
+      </div>
+      <button class="vadd" onclick="showFormFijo()">+ agregar fijo</button>
     </div>
     <div class="sec">
       <div class="sh"><h2>Gastos variables</h2><span class="tag te">presupuesto vs real</span><div class="sr"></div></div>
@@ -501,7 +529,18 @@ tr:hover td{background:#fafaf8}
         <div class="th"><span>Variables</span><div class="ts">Pres: <strong id="vb">—</strong> · Real: <strong id="vr">—</strong> · Dif: <strong id="vd">—</strong></div></div>
         <table><thead><tr><th style="width:38%">Concepto</th><th class="r" style="width:22%">Presupuesto</th><th class="r" style="width:22%">Real gastado</th><th class="r" style="width:12%">Diferencia</th><th style="width:6%"></th></tr></thead><tbody id="var-tbody"></tbody></table>
       </div>
-      <button class="vadd" onclick="addVar()">+ agregar rubro</button>
+      <div id="form-var" style="display:none;background:var(--cream);border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-top:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div class="ifg"><label>Rubro</label><input type="text" id="nv-nombre" placeholder="ej: Comida" style="width:150px"></div>
+          <div class="ifg"><label>Presupuesto</label><input type="number" id="nv-pres" placeholder="0" style="width:120px" min="0"></div>
+          <div class="ifg"><label>Real gastado</label><input type="number" id="nv-real" placeholder="0" style="width:120px" min="0"></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn" onclick="confirmAddVar()">+ Agregar</button>
+            <button class="btn" style="background:transparent;color:var(--muted);border:1px solid var(--border)" onclick="document.getElementById('form-var').style.display='none'">Cancelar</button>
+          </div>
+        </div>
+      </div>
+      <button class="vadd" onclick="showFormVar()">+ agregar rubro</button>
       <!-- MODULO: COSTO DE OPORTUNIDAD - hint aparece al escribir monto en nueva row -->
       <div style="margin-top:12px;background:white;border:1px solid var(--border);border-radius:7px;padding:12px 14px;box-shadow:var(--sh)">
         <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Costo de oportunidad</div>
@@ -957,20 +996,127 @@ function renderGastos(){
     }).join('');
   }
 }
-function addGasto(){ST.months[activeTarMes].items.push({c:'Nuevo ítem',t:'',q:'',m:0,r:'Propio',n:''});renderGastos()}
+function showFormGasto(){
+  const f=document.getElementById('form-gasto');
+  f.style.display='block';
+  // Poblar responsables
+  const sel=document.getElementById('ng-resp');
+  sel.innerHTML=(ST.personas||['Propio']).map(p=>`<option>${p}</option>`).join('');
+  document.getElementById('ng-concepto').focus();
+}
+function confirmAddGasto(){
+  const concepto=(document.getElementById('ng-concepto').value||'').trim();
+  const monto=parseFloat(document.getElementById('ng-monto').value)||0;
+  const cuotas=parseInt(document.getElementById('ng-cuotas').value)||1;
+  const tarjeta=document.getElementById('ng-tarjeta').value||'';
+  const resp=document.getElementById('ng-resp').value||'Propio';
+  if(!concepto){toast('Ingresá un concepto');return;}
+  if(!monto){toast('Ingresá el monto');return;}
+  const q=cuotas>1?`1/${cuotas}`:'';
+  if(!ST.months[activeTarMes])return;
+  ST.months[activeTarMes].items.push({c:concepto,t:tarjeta,q,m:monto,r:resp,n:''});
+  // Limpiar form
+  document.getElementById('ng-concepto').value='';
+  document.getElementById('ng-monto').value='';
+  document.getElementById('ng-cuotas').value='1';
+  document.getElementById('ng-tarjeta').value='';
+  document.getElementById('form-gasto').style.display='none';
+  renderGastos();recalc();autosave();
+  toast('✓ Ítem agregado');
+}
+function addGasto(){showFormGasto();}
+
+function showFormFijo(){
+  document.getElementById('form-fijo').style.display='block';
+  document.getElementById('nf-concepto').focus();
+}
+function confirmAddFijo(){
+  const nombre=(document.getElementById('nf-concepto').value||'').trim();
+  const monto=parseFloat(document.getElementById('nf-monto').value)||0;
+  if(!nombre){toast('Ingresá un concepto');return;}
+  if(!monto){toast('Ingresá el monto');return;}
+  ST.fijos.push({id:'fij_'+Date.now(),nombre,monto});
+  document.getElementById('nf-concepto').value='';
+  document.getElementById('nf-monto').value='';
+  document.getElementById('form-fijo').style.display='none';
+  renderFijos();recalc();autosave();
+  toast('✓ Gasto fijo agregado');
+}
+
+function showFormVar(){
+  document.getElementById('form-var').style.display='block';
+  document.getElementById('nv-nombre').focus();
+}
+function confirmAddVar(){
+  const nombre=(document.getElementById('nv-nombre').value||'').trim();
+  const p=parseFloat(document.getElementById('nv-pres').value)||0;
+  const r=parseFloat(document.getElementById('nv-real').value)||0;
+  if(!nombre){toast('Ingresá un rubro');return;}
+  if(!ST.vars[activeVarMes])ST.vars[activeVarMes]=[];
+  ST.vars[activeVarMes].push({nombre,p,r});
+  document.getElementById('nv-nombre').value='';
+  document.getElementById('nv-pres').value='';
+  document.getElementById('nv-real').value='';
+  document.getElementById('form-var').style.display='none';
+  renderVars();autosave();
+  toast('✓ Rubro agregado');
+}
 
 // ═══ FIJOS ═══
+// Guarda snapshot del monto anterior con el mes hasta el cual aplica
+function saveFijoHistorial(idx, montoAnterior){
+  if(!ST.fijosHistorial)ST.fijosHistorial=[];
+  // mes activo al momento de editar
+  const mesActual = activeTarMes || _currentMonthKey;
+  // guarda: para el fijo idx, el monto montoAnterior era válido hasta (excl.) mesActual
+  ST.fijosHistorial.push({idx, mes: mesActual, monto: montoAnterior, id: ST.fijos[idx]?.id});
+}
+
+// Devuelve el monto de un fijo para un mes dado (busca en historial)
+function getFijoMontoParaMes(fijo, globalIdx, mes){
+  if(!ST.fijosHistorial||!ST.fijosHistorial.length) return fijo.monto;
+  // Buscar entradas de historial para este fijo (por id o idx)
+  const fijoId = fijo.id;
+  const entradas = ST.fijosHistorial.filter(h => (fijoId && h.id===fijoId) || h.idx===globalIdx);
+  if(!entradas.length) return fijo.monto;
+  // Ordenar por mes desc — el monto vigente para `mes` es el de la entrada más reciente cuyo mes > mes consultado
+  // Es decir: el historial guarda "antes de este mes, el monto era X"
+  const mesesOrdenados = entradas
+    .filter(h => mesStrToDate(h.mes) > mesStrToDate(mes))
+    .sort((a,b) => mesStrToDate(a.mes) - mesStrToDate(b.mes));
+  if(mesesOrdenados.length) return mesesOrdenados[0].monto;
+  return fijo.monto; // no hay historial anterior → usa el actual
+}
+
+// Total de fijos para un mes específico
+function getTotalFijosParaMes(mes){
+  if(!ST.fijos) return 0;
+  const ahora = new Date();
+  const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+  // Si es mes pasado, usar historial
+  if(mesStrToDate(mes) < inicioMesActual){
+    return ST.fijos.reduce((s,f,i) => s + getFijoMontoParaMes(f,i,mes), 0);
+  }
+  return ST.fijos.reduce((s,f)=>s+f.monto, 0);
+}
+
 function renderFijos(){
+  // Asignar IDs estables a fijos que no los tienen
+  ST.fijos.forEach((f,i)=>{ if(!f.id) f.id = 'fij_'+(Date.now()+i); });
   document.getElementById('fij-tbody').innerHTML=ST.fijos.map((f,i)=>`<tr>
     <td><input class="inm" type="text" value="${f.nombre}" onchange="ST.fijos[${i}].nombre=this.value"></td>
-    <td class="r"><input class="iinp" type="number" value="${f.monto}" style="width:130px" onchange="ST.fijos[${i}].monto=parseFloat(this.value)||0;recalc()"></td>
+    <td class="r"><input class="iinp" type="number" value="${f.monto}" style="width:130px"
+      onchange="saveFijoHistorial(${i}, ST.fijos[${i}].monto); ST.fijos[${i}].monto=parseFloat(this.value)||0; recalc()"></td>
     <td><button class="delbtn" onclick="ST.fijos.splice(${i},1);renderFijos();recalc()">✕</button></td>
   </tr>`).join('');
   const tot=ST.fijos.reduce((s,f)=>s+f.monto,0);
   document.getElementById('fij-tot').textContent=fmt(tot);
   return tot;
 }
-function addFijo(){ST.fijos.push({nombre:'Nuevo',monto:0});renderFijos()}
+function addFijo(){
+  ST.fijos.push({id:'fij_'+Date.now(),nombre:'Nuevo',monto:0});
+  renderFijos();
+}
 
 // ═══ VARS ═══
 function renderVars(){
@@ -1139,7 +1285,7 @@ function renderCierre(){
   const mes=document.getElementById('cierre-mes').value;
   const md=ST.months[mes]||{items:[],total:0,paid:false};
   const vs=ST.vars[mes]||[];
-  const totF=ST.fijos.reduce((s,f)=>s+f.monto,0);
+  const totF=getTotalFijosParaMes(mes);
   const totVB=vs.reduce((s,v)=>s+v.p,0);
   const totVR=vs.reduce((s,v)=>s+(v.r||0),0);
   const totT=md.items.reduce((s,g)=>s+g.m,0);
@@ -1368,7 +1514,7 @@ function recalc(){
   document.getElementById('k-ing-s').textContent=fmtU(ingTot/m)+' equiv.';
   document.getElementById('b-ing').textContent=fmt(ingTot);
   document.getElementById('bal-mes-lbl').textContent=activeTarMes;
-  const totF=ST.fijos.reduce((s,f)=>s+f.monto,0);
+  const totF=getTotalFijosParaMes(activeTarMes);
   document.getElementById('b-fij').textContent='−'+fmt(totF);
   const vs=ST.vars[activeTarMes]||[];
   const totV=vs.reduce((s,v)=>s+(v.r||v.p),0);
@@ -1885,7 +2031,7 @@ function deleteDeuda(id){
 
 // ═══ RESERVAS FUTURAS ═══
 function calcNecesidadMes(mes){
-  const totF=ST.fijos.reduce((s,f)=>s+f.monto,0);
+  const totF=getTotalFijosParaMes(mes);
   const vs=ST.vars[mes]||[];
   const totV=vs.reduce((s,v)=>s+(v.r||v.p),0);
   const md=ST.months[mes]||{items:[]};
@@ -1954,7 +2100,7 @@ function renderReservasCards(){
       </div>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
         <span>${pct}% cubierto</span>
-        <span>Fijos: ${fmtD(ST.fijos.reduce((s,f)=>s+f.monto,0))} · Vars: ${fmtD((ST.vars[mes]||[]).reduce((s,v)=>s+(v.r||v.p),0))} · Tarjeta: ${fmtD((ST.months[mes]||{items:[]}).items.reduce((s,g)=>s+g.m,0))}</span>
+        <span>Fijos: ${fmtD(getTotalFijosParaMes(mes))} · Vars: ${fmtD((ST.vars[mes]||[]).reduce((s,v)=>s+(v.r||v.p),0))} · Tarjeta: ${fmtD((ST.months[mes]||{items:[]}).items.reduce((s,g)=>s+g.m,0))}</span>
       </div>
     </div>`;
   }).join('');
