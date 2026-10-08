@@ -36,10 +36,10 @@ Cuando cambies el script, usá **Implementar > Administrar implementaciones > Ed
 
 ## Pantallas
 
-1. **Hoy**: cuánto reservar ahora para el mes que viene, el resto de la recomendación de Proyección, los indicadores del Panel, el estado de cada tarjeta del mes que viene y los próximos vencimientos de las reservas activas.
-2. **Proyección**: ingresos y gastos (barras) y reserva acumulada (línea) a 12 meses, en qué mes se llega a la meta mínima y a la máxima, y la tabla completa con la columna Lectura.
-3. **Gastos**: dona del mes y barras apiladas de los próximos meses, a partir de Categorías. Si tocás una categoría, aparecen las cuotas (Movimientos) y los gastos fijos (Fijos) de ese mes.
-4. **Tarjetas**: Resúmenes por mes con el estado de cada tarjeta y los totales del Panel.
-5. **Ahorro**: reserva de emergencia, inversión del mes contra el objetivo, cartera por tipo y por instrumento, reservas activas y saldos de terceros.
+1. **Hoy**: una frase con el estado (al día, falta reservar o falta pagar), el mes que viene con su barra de avance y solo las tarjetas a las que les falta algo, el plan para lo que cobres este mes (barra con el reparto y pasos en orden: gastos del mes, reservar el mes que viene, invertir, reserva de emergencia), el medidor de la reserva contra las metas de 3 y 6 meses, accesos a lo que te deben y a la cartera, y los frascos que vencen agrupados por día.
+2. **Proyección**: totales a 12 meses, ingresos contra gastos por mes (con aviso de los meses en déficit), la reserva acumulada contra las metas y el detalle de cada mes en desplegables.
+3. **Gastos**: gasto propio del mes con barras por categoría (tocá una para ver qué incluye), lo pagado por otros aparte y las barras apiladas de los próximos meses.
+4. **Tarjetas**: total del mes con barra de avance, primero las que tienen faltante y después las cubiertas.
+5. **Ahorro**: reserva de emergencia, inversión del mes contra el plan, cartera por tipo e instrumento, plata apartada por mes de pago y saldos de terceros.
 
 Para actualizar, tirá la pantalla hacia abajo o tocá el botón de actualizar. El ícono del ojo oculta los montos.
